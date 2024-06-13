@@ -29,7 +29,7 @@ class BinanceWebSocket extends EventEmitter {
     this.ws = new WebSocket(socketUrl);
 
     this.ws.on('open', () => {
-      console.log(`Connected to Binance WebSocket for ${this.symbols.join(', ')}`);
+      console.log(`Binance WebSocket API connected`)
     });
 
     this.ws.on('message', (data) => {
