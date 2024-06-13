@@ -1,43 +1,22 @@
-import { useEffect, useState } from 'react';
-import io from 'socket.io-client';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import LiveUpdate from './pages/liveUpdate';
+import HistoricalUpdate from './pages/historicalUpdate';
 
-const socket = io('http://localhost:3000');
-
-function App() {
-  const [tickers, setTickers] = useState({});
-
-  useEffect(() => {
-    socket.on('tickerData', (data) => {
-      setTickers((prevTickers) => ({
-        ...prevTickers,
-        [data.s]: data,
-      }));
-    });
-
-    return () => {
-      socket.off('tickerData');
-    };
-  }, []);
-
-  const sortedTickers = Object.values(tickers)
-    .sort((a, b) => parseFloat(b.q) - parseFloat(a.q))
-    .slice(0, 15);
-
+const App = () => {
   return (
-    <div>
-      <h1>市場總覽</h1>
-      <div className="tickers">
-        {sortedTickers.map((ticker) => (
-          <div key={ticker.s} className="ticker">
-            <h2>{ticker.s}</h2>
-            <p>最後價格: {ticker.c}</p>
-            <p>24h變動百分比: {ticker.P}%</p>
-            <p>成交量: {ticker.q}</p>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Router>
+      <nav>
+        <ul>
+          <li><Link to="/live-update">Live Update</Link></li>
+          <li><Link to="/historical-update">Historical Update</Link></li>
+        </ul>
+      </nav>
+      <Routes>
+        <Route path="/live-update" element={<LiveUpdate />} />
+        <Route path="/historical-update" element={<HistoricalUpdate />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;

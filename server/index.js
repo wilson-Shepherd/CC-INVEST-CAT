@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import connectDB from './database.js';
 import { router as tickerRoutes, initWebSocketRoutes } from './routes/tickerRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -10,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 connectDB();
 
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {

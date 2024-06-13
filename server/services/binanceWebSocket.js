@@ -1,13 +1,10 @@
-import Binance from 'binance-api-node';
 import { EventEmitter } from 'events';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import binanceClient from './binanceClient.js';
 
 class BinanceWebSocket extends EventEmitter {
   constructor() {
     super();
-    this.client = Binance();
+    this.client = binanceClient();
     this.symbols = [];
     this.connect();
   }
