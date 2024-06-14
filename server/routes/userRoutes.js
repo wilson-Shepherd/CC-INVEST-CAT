@@ -1,9 +1,9 @@
 import express from 'express';
-import { createUser, addUserCrypto } from '../controllers/userController.js';
+import { registerUser, loginUser } from '../controllers/userController.js';
 
 const router = express.Router();
 
-router.post('/users', createUser);
-router.post('/users/cryptos', addUserCrypto);
+router.post('/register', registerUser);
+router.post('/login', loginUser);
 
 export default router;
