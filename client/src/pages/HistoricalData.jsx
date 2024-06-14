@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const HistoricalUpdate = () => {
+const HistoricalData = () => {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [interval, setInterval] = useState('1d');
   const [startTime, setStartTime] = useState('2020-01-01');
@@ -64,4 +64,4 @@ const HistoricalUpdate = () => {
   );
 };
 
-export default HistoricalUpdate;
+export default HistoricalData;

@@ -1,35 +1,55 @@
 import User from '../models/User.js';
-import UserCrypto from '../models/UserCrypto.js';
+import bcrypt from 'bcryptjs';
+import signInJWT from '../utils/signInJWT.js';
 
-export const createUser = async (req, res) => {
+// 注册用户
+export const registerUser = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    const newUser = new User({
+    const user = new User({
       username,
       email,
-      password,
+      password
     });
 
-    await newUser.save();
-    res.status(201).json(newUser);
+    await user.save();
+    res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    if (error.code === 11000) {
+      res.status(400).json({ message: 'Username or email already exists' });
+    } else if (error.name === 'ValidationError' && error.errors.password) {
+      res.status(400).json({ message: 'Password requirements not met' });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
   }
 };
 
-export const addUserCrypto = async (req, res) => {
-  const { userId, cryptoSymbol } = req.body;
+// 登录用户
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
 
   try {
-    const newUserCrypto = new UserCrypto({
-      user: userId,
-      cryptoSymbol,
-    });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
 
-    await newUserCrypto.save();
-    res.status(201).json(newUserCrypto);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    const token = await signInJWT(user._id);
+    res.json({ token });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    if (error.name === 'MongoError') {
+      res.status(400).json({ message: 'Invalid email or password' });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
   }
 };
