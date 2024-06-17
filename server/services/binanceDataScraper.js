@@ -49,12 +49,10 @@ class BinanceDataScraper {
       interval,
       ...(startTime && { startTime }),
       ...(endTime && { endTime }),
-      ...(limit && { limit }),
       ...(timeZone && { timeZone }),
     };
 
     try {
-      console.log(`Calling Binance API with params: ${JSON.stringify(params)}`);
       const response = await axios.get('https://api.binance.com/api/v3/klines', { params });
       return response.data;
     } catch (error) {

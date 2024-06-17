@@ -1,18 +1,19 @@
-import { useState } from 'react';
-import Plot from 'react-plotly.js';
+import { useState, useRef, useEffect } from 'react';
+import * as d3 from 'd3';
 
 const HistoricalData = () => {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [interval, setInterval] = useState('1d');
   const [startTime, setStartTime] = useState('2021-01-01');
   const [endTime, setEndTime] = useState(new Date().toISOString().split('T')[0]);
-  const [candleData, setCandleData] = useState(null);
-  const [backtestData, setBacktestData] = useState(null);
+  const [candleData, setCandleData] = useState([]);
+  const [backtestData, setBacktestData] = useState([]);
+  const chartRef = useRef();
 
   const fetchData = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/ticker/uiKlines', {
-        method: 'POST',
+      const response = await fetch('http://localhost:3000/api/ticker/klines', {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -22,13 +23,14 @@ const HistoricalData = () => {
         throw new Error('Network response was not ok');
       }
       const result = await response.json();
-      const formattedData = {
-        x: result.map(d => new Date(d[0]).toISOString()),
-        open: result.map(d => parseFloat(d[1])),
-        high: result.map(d => parseFloat(d[2])),
-        low: result.map(d => parseFloat(d[3])),
-        close: result.map(d => parseFloat(d[4]))
-      };
+      const formattedData = result.map(d => ({
+        date: new Date(d[0]),
+        open: parseFloat(d[1]),
+        high: parseFloat(d[2]),
+        low: parseFloat(d[3]),
+        close: parseFloat(d[4]),
+        volume: parseFloat(d[5])
+      }));
       setCandleData(formattedData);
     } catch (error) {
       console.error('Fetch error:', error);
@@ -53,6 +55,60 @@ const HistoricalData = () => {
       console.error('Fetch error:', error);
     }
   };
+
+  useEffect(() => {
+    if (candleData.length === 0) return;
+
+    const margin = { top: 20, right: 30, bottom: 30, left: 40 },
+          width = 800 - margin.left - margin.right,
+          height = 400 - margin.top - margin.bottom;
+
+    const svg = d3.select(chartRef.current)
+      .append('svg')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleBand()
+      .domain(candleData.map(d => d.date))
+      .range([0, width])
+      .padding(0.3);
+
+    const y = d3.scaleLinear()
+      .domain([d3.min(candleData, d => d.low), d3.max(candleData, d => d.high)])
+      .range([height, 0]);
+
+    svg.append('g')
+      .attr('transform', `translate(0,${height})`)
+      .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m-%d")));
+
+    svg.append('g')
+      .call(d3.axisLeft(y));
+
+    svg.selectAll('.candle')
+      .data(candleData)
+      .enter()
+      .append('rect')
+      .attr('class', 'candle')
+      .attr('x', d => x(d.date))
+      .attr('y', d => y(Math.max(d.open, d.close)))
+      .attr('width', x.bandwidth())
+      .attr('height', d => Math.abs(y(d.open) - y(d.close)))
+      .attr('fill', d => d.close > d.open ? 'green' : 'red');
+
+    svg.selectAll('.wick')
+      .data(candleData)
+      .enter()
+      .append('rect')
+      .attr('class', 'wick')
+      .attr('x', d => x(d.date) + x.bandwidth() / 2)
+      .attr('y', d => y(d.high))
+      .attr('width', 1)
+      .attr('height', d => Math.abs(y(d.high) - y(d.low)))
+      .attr('fill', d => d.close > d.open ? 'green' : 'red');
+
+  }, [candleData]);
 
   return (
     <div>
@@ -83,52 +139,10 @@ const HistoricalData = () => {
       </div>
       <button onClick={fetchData}>Fetch Data</button>
       <button onClick={runBacktest}>Run Backtest</button>
-      {candleData && (
-        <div>
-          <h2>K线图:</h2>
-          <Plot
-            data={[
-              {
-                x: candleData.x,
-                close: candleData.close,
-                decreasing: { line: { color: 'red' } },
-                high: candleData.high,
-                increasing: { line: { color: 'green' } },
-                low: candleData.low,
-                open: candleData.open,
-                type: 'candlestick',
-                xaxis: 'x',
-                yaxis: 'y'
-              }
-            ]}
-            layout={{
-              title: 'K线图',
-              xaxis: {
-                title: 'Date',
-                type: 'date'
-              },
-              yaxis: {
-                title: 'Price'
-              }
-            }}
-          />
-        </div>
-      )}
-      {backtestData && (
+      <div ref={chartRef}></div>
+      {backtestData.length > 0 && (
         <div>
           <h2>Backtest Results:</h2>
-          <Plot
-            data={[
-              {
-                x: backtestData.map(item => item.exit_time),
-                y: backtestData.map(item => item.balance),
-                type: 'scatter',
-                mode: 'lines+points',
-                marker: { color: 'red' },
-              },
-            ]}
-            layout={{ title: 'Backtest Balance Over Time' }}
-          />
           <pre>{JSON.stringify(backtestData, null, 2)}</pre>
         </div>
       )}

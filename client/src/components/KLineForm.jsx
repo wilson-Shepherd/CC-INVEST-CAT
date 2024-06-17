@@ -1,53 +1,69 @@
-// client/src/components/KlineForm.jsx
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import './KLineForm.css';
 
-const KlineForm = ({ onFetchData }) => {
+const KLineForm = ({ onFetchData }) => {
   const [symbol, setSymbol] = useState('BTCUSDT');
   const [interval, setInterval] = useState('1d');
-  const [startTime, setStartTime] = useState('1625097600000'); // 默认开始时间戳
-  const [endTime, setEndTime] = useState('1627689600000'); // 默认结束时间戳
-  const [limit, setLimit] = useState('100');
-  const [timeZone, setTimeZone] = useState('0');
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onFetchData({ symbol, interval, startTime, endTime, limit, timeZone });
+    if (!startDate || !endDate) {
+      alert('Please enter both start and end dates.');
+      return;
+    }
+    const startTime = startDate.getTime();
+    const endTime = endDate.getTime();
+    const timeZone = '0';
+    onFetchData({ symbol, interval, startTime, endTime, timeZone });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="kline-form">
       <div>
         <label>Symbol:</label>
         <input type="text" value={symbol} onChange={(e) => setSymbol(e.target.value)} />
       </div>
       <div>
         <label>Interval:</label>
-        <input type="text" value={interval} onChange={(e) => setInterval(e.target.value)} />
+        <select value={interval} onChange={(e) => setInterval(e.target.value)}>
+          <option value="1s">1 Second</option>
+          <option value="15m">15 Minutes</option>
+          <option value="1h">1 Hour</option>
+          <option value="4h">4 Hours</option>
+          <option value="1d">1 Day</option>
+          <option value="1w">1 Week</option>
+        </select>
       </div>
       <div>
-        <label>Start Time (timestamp):</label>
-        <input type="text" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+        <label>Start Date:</label>
+        <DatePicker
+          selected={startDate}
+          onChange={date => setStartDate(date)}
+          showTimeSelect
+          dateFormat="Pp"
+        />
       </div>
       <div>
-        <label>End Time (timestamp):</label>
-        <input type="text" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-      </div>
-      <div>
-        <label>Limit:</label>
-        <input type="text" value={limit} onChange={(e) => setLimit(e.target.value)} />
-      </div>
-      <div>
-        <label>Time Zone:</label>
-        <input type="text" value={timeZone} onChange={(e) => setTimeZone(e.target.value)} />
+        <label>End Date:</label>
+        <DatePicker
+          selected={endDate}
+          onChange={date => setEndDate(date)}
+          showTimeSelect
+          dateFormat="Pp"
+        />
       </div>
       <button type="submit">Fetch Data</button>
     </form>
   );
 };
 
-KlineForm.propTypes = {
+KLineForm.propTypes = {
   onFetchData: PropTypes.func.isRequired,
 };
 
-export default KlineForm;
+export default KLineForm;
