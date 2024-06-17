@@ -2,7 +2,6 @@ import BinanceWebSocket from '../services/binanceWebSocket.js';
 import BinanceDataScraper from '../services/binanceDataScraper.js';
 import { runBacktest } from '../services/backtester.js';
 
-// 实例化一次
 const scraper = new BinanceDataScraper();
 
 let binanceWebSocket;
@@ -50,14 +49,16 @@ export const runStrategyBacktest = async (req, res) => {
 
 export const fetchKlines = async (req, res) => {
   const { symbol, interval, startTime, endTime, limit, timeZone } = req.query;
+  if (!symbol || !interval || !startTime || !endTime) {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
   try {
     const cleanTimeZone = timeZone ? timeZone.trim() : undefined;
-    console.log(`Fetching Klines with params: symbol=${symbol}, interval=${interval}, startTime=${startTime}, endTime=${endTime}, limit=${limit}, timeZone=${cleanTimeZone}`);
     const data = await scraper.getKlines(symbol, interval, Number(startTime), Number(endTime), Number(limit), cleanTimeZone);
     res.json(data);
   } catch (error) {
-    console.error('Error fetching Klines:', error.message); // 仅打印错误消息
-    console.error('Full error details:', error); // 打印完整的错误详情
+    console.error('Error fetching Klines:', error.message);
     res.status(500).json({ error: 'Failed to fetch Klines' });
   }
 };
