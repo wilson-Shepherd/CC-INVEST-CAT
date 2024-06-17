@@ -28,16 +28,16 @@ dcClient.on('ready', () => {
     for (const { symbol, data } of messages) {
       if (data) {
         const message = `
-${symbol} 資訊:
-最後價格: ${data.lastPrice}
-24h 變動百分比: ${data.priceChangePercent}%
-成交量: ${data.volume}
+          ${symbol} 資訊:
+          最後價格: ${data.lastPrice}
+          24h 變動百分比: ${data.priceChangePercent}%
+          成交量: ${data.volume}
         `;
         const channelId = process.env.DISCORD_CHANNEL_ID;
         await sendNotification(channelId, message);
       }
     }
-  }, 60 * 1000);
+  }, 60 * 60 * 1000);
 });
 
 dcClient.on('interactionCreate', async interaction => {
