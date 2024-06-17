@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import LiveData from './pages/LiveData';
 import HistoricalData from './pages/HistoricalData';
+import Kline from './pages/Kline';
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
           <li><Link to="/login">Login</Link></li>
           <li><Link to="/live-data">Live Data</Link></li>
           <li><Link to="/historical-data">Historical Data</Link></li>
+          <li><Link to="/kline">Kline</Link></li>
         </ul>
       </nav>
       <Routes>
@@ -23,6 +25,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/live-data" element={<LiveData />} />
         <Route path="/historical-data" element={<HistoricalData />} />
+        <Route path="/kline" element={<Kline />} />
       </Routes>
     </Router>
   );

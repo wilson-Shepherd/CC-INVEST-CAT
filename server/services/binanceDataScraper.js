@@ -1,3 +1,4 @@
+import axios from 'axios';
 import binanceClient from './binanceClient.js';
 
 class BinanceDataScraper {
@@ -38,6 +39,26 @@ class BinanceDataScraper {
       }));
     } catch (error) {
       console.error('Error fetching historical data:', error);
+      throw error;
+    }
+  }
+
+  async getKlines(symbol, interval, startTime, endTime, limit, timeZone) {
+    const params = {
+      symbol,
+      interval,
+      ...(startTime && { startTime }),
+      ...(endTime && { endTime }),
+      ...(limit && { limit }),
+      ...(timeZone && { timeZone }),
+    };
+
+    try {
+      console.log(`Calling Binance API with params: ${JSON.stringify(params)}`);
+      const response = await axios.get('https://api.binance.com/api/v3/klines', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Klines from Binance:', error.message);
       throw error;
     }
   }
