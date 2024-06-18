@@ -8,16 +8,20 @@ class BinanceDataScraper {
 
   async getHistoricalData(symbol, interval, startTime, endTime) {
     let allCandles = [];
-    let fetchStartTime = startTime;
+    let fetchStartTime = new Date(startTime).getTime();
 
     try {
-      while (fetchStartTime < endTime) {
-        const candles = await this.client.candles({
+      while (fetchStartTime < new Date(endTime).getTime()) {
+        const params = {
           symbol,
           interval,
           startTime: fetchStartTime,
-          endTime,
-        });
+          endTime: new Date(endTime).getTime(),
+          limit: 1000
+        };
+
+        const response = await axios.get('https://api.binance.com/api/v3/klines', { params });
+        const candles = response.data;
 
         if (candles.length === 0) {
           break;
@@ -25,17 +29,17 @@ class BinanceDataScraper {
 
         allCandles = allCandles.concat(candles);
 
-        fetchStartTime = candles[candles.length - 1].closeTime + 1;
+        fetchStartTime = candles[candles.length - 1][6] + 1;
       }
 
       return allCandles.map(c => ({
-        openTime: c.openTime,
-        open: parseFloat(c.open),
-        high: parseFloat(c.high),
-        low: parseFloat(c.low),
-        close: parseFloat(c.close),
-        volume: parseFloat(c.volume),
-        closeTime: c.closeTime,
+        openTime: c[0],
+        open: parseFloat(c[1]),
+        high: parseFloat(c[2]),
+        low: parseFloat(c[3]),
+        close: parseFloat(c[4]),
+        volume: parseFloat(c[5]),
+        closeTime: c[6]
       }));
     } catch (error) {
       console.error('Error fetching historical data:', error);
@@ -49,7 +53,8 @@ class BinanceDataScraper {
       interval,
       ...(startTime && { startTime }),
       ...(endTime && { endTime }),
-      ...(timeZone && { timeZone }),
+      ...(limit && { limit }),
+      ...(timeZone && { timeZone })
     };
 
     try {
