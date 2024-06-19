@@ -5,6 +5,7 @@ import connectDB from './config/database.js';
 import tickerRoutes, { initWebSocketRoutes } from './routes/ticker.js';
 import userRoutes from './routes/user.js';
 import notificationRoutes from './routes/dcNotification.js';
+import mockTradingRoutes from './routes/mockTrading.js';
 import { errorHandler } from './utils/errorHandler.js';
 import dcClient from './services/discordBot/app.js';
 import './services/trading/bot.js';
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
 app.use('/api/ticker', tickerRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api', notificationRoutes);
+app.use('/api/mockTrading', mockTradingRoutes);
 
 if (dcClient) {
   console.log('Discord client initialized');
