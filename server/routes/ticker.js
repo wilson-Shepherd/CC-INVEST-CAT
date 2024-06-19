@@ -1,8 +1,14 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { initializeWebSocket, streamTickerData } from '../controllers/tickerController.js';
-import { getTickerData, fetchHistoricalData, runStrategyBacktest, fetchKlines } from '../controllers/tickerController.js';
+import {
+  initializeWebSocket,
+  streamTickerData,
+  getTickerData,
+  fetchHistoricalData,
+  runStrategyBacktest,
+  fetchKlines,
+} from '../controllers/ticker.js';
 
 const router = express.Router();
 

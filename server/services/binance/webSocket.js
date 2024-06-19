@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import binanceClient from './binanceClient.js';
+import binanceClient from './client.js';
 
 class BinanceWebSocket extends EventEmitter {
   constructor() {
@@ -22,7 +22,7 @@ class BinanceWebSocket extends EventEmitter {
   async connect() {
     await this.fetchSymbols();
     const streams = this.symbols.map(symbol => `${symbol}@ticker`).join('/');
-    
+
     this.client.ws.customSubStream(streams, data => {
       this.emit('tickerData', data);
     });

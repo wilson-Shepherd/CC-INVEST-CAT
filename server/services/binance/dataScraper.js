@@ -1,5 +1,5 @@
 import axios from 'axios';
-import binanceClient from './binanceClient.js';
+import binanceClient from './client.js';
 
 class BinanceDataScraper {
   constructor() {
@@ -17,7 +17,7 @@ class BinanceDataScraper {
           interval,
           startTime: fetchStartTime,
           endTime: new Date(endTime).getTime(),
-          limit: 1000
+          limit: 1000,
         };
 
         const response = await axios.get('https://api.binance.com/api/v3/klines', { params });
@@ -39,7 +39,7 @@ class BinanceDataScraper {
         low: parseFloat(c[3]),
         close: parseFloat(c[4]),
         volume: parseFloat(c[5]),
-        closeTime: c[6]
+        closeTime: c[6],
       }));
     } catch (error) {
       console.error('Error fetching historical data:', error);
@@ -54,7 +54,7 @@ class BinanceDataScraper {
       ...(startTime && { startTime }),
       ...(endTime && { endTime }),
       ...(limit && { limit }),
-      ...(timeZone && { timeZone })
+      ...(timeZone && { timeZone }),
     };
 
     try {

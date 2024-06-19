@@ -17,4 +17,12 @@ ws.on('message', (data) => {
   };
 });
 
+ws.on('error', (error) => {
+  console.error('WebSocket error:', error);
+});
+
+ws.on('close', () => {
+  console.warn('WebSocket connection closed');
+});
+
 export const getLatestPrices = () => latestPrices;

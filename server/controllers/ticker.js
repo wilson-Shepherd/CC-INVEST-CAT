@@ -1,6 +1,6 @@
-import BinanceWebSocket from '../services/binanceWebSocket.js';
-import BinanceDataScraper from '../services/binanceDataScraper.js';
-import { runBacktest } from '../services/backtester.js';
+import BinanceWebSocket from '../services/binance/webSocket.js';
+import BinanceDataScraper from '../services/binance/dataScraper.js';
+import { runBacktest } from '../tests/backtest.js';
 
 const scraper = new BinanceDataScraper();
 
@@ -29,7 +29,7 @@ export const fetchHistoricalData = async (req, res) => {
       open: data.map(d => d.open),
       high: data.map(d => d.high),
       low: data.map(d => d.low),
-      close: data.map(d => d.close)
+      close: data.map(d => d.close),
     };
     res.json(formattedData);
   } catch (error) {
@@ -38,9 +38,9 @@ export const fetchHistoricalData = async (req, res) => {
 };
 
 export const runStrategyBacktest = async (req, res) => {
-  const { symbol, interval, startTime, endTime } = req.body;
+  const { symbol, interval, startTime, endTime, lowerPrice, upperPrice, gridSize } = req.body;
   try {
-    const balanceHistory = await runBacktest(symbol, interval, new Date(startTime).getTime(), new Date(endTime).getTime());
+    const balanceHistory = await runBacktest(symbol, interval, new Date(startTime).getTime(), new Date(endTime).getTime(), lowerPrice, upperPrice, gridSize);
     res.json(balanceHistory);
   } catch (error) {
     res.status(500).json({ error: 'Failed to run backtest' });

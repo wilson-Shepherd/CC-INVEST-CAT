@@ -1,22 +1,16 @@
-import User from '../models/User.js';
+import User from '../models/user.js';
 import bcrypt from 'bcryptjs';
-import signInJWT from '../utils/signInJWT.js';
+import { signJWT } from '../utils/jwt.js';
 
-// 注册用户
 export const registerUser = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    const user = new User({
-      username,
-      email,
-      password
-    });
-
+    const user = new User({ username, email, password });
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    console.error(error);
+    console.error('Error registering user:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Username or email already exists' });
     } else if (error.name === 'ValidationError' && error.errors.password) {
@@ -27,7 +21,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// 登录用户
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -42,10 +35,10 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    const token = await signInJWT(user._id);
+    const token = await signJWT(user._id);
     res.json({ token });
   } catch (error) {
-    console.error(error);
+    console.error('Error logging in user:', error);
     if (error.name === 'MongoError') {
       res.status(400).json({ message: 'Invalid email or password' });
     } else {
