@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Home from './pages/Home';
@@ -7,22 +7,30 @@ import HistoricalData from './pages/HistoricalData';
 import Kline from './pages/Kline';
 import MockTrading from './pages/MockTrading';
 import Header from './components/Header';
+import PrivateRoute from './components/PrivateRoute';
+import RedirectRoute from './components/RedirectRoute';
+import { AuthProvider } from './contexts/AuthContext';
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import './App.css';
 
 const App = () => {
   return (
-    <Router>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/live-data" element={<LiveData />} />
-        <Route path="/historical-data" element={<HistoricalData />} />
-        <Route path="/kline" element={<Kline />} />
-        <Route path="/mock-trading" element={<MockTrading />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <WebSocketProvider>
+        <Router>
+          <Header />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/register" element={<RedirectRoute element={<Register />} />} />
+            <Route path="/login" element={<RedirectRoute element={<Login />} />} />
+            <Route path="/mock-trading" element={<PrivateRoute element={<MockTrading />} />} />
+            <Route path="/live-data" element={<LiveData />} />
+            <Route path="/historical-data" element={<HistoricalData />} />
+            <Route path="/kline" element={<Kline />} />
+          </Routes>
+        </Router>
+      </WebSocketProvider>
+    </AuthProvider>
   );
 };
 

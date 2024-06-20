@@ -1,32 +1,36 @@
-import { useState, useEffect } from 'react';
-import MockTradingForm from '../components/MockTradingForm';
-import MockTradingSummary from '../components/MockTradingSummary';
+import { useEffect, useState, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from '../contexts/AuthContext';
+import MockAccountInfo from '../components/MockAccountInfo';
 
 const MockTrading = () => {
+  const { user } = useContext(AuthContext);
   const [account, setAccount] = useState(null);
-  const userId = '12345'; // Replace with actual user ID
 
   useEffect(() => {
-    fetch(`/api/mockTrading/mockAccount/${userId}`)
-      .then(response => response.json())
-      .then(data => setAccount(data))
-      .catch(error => console.error(error));
-  }, []);
+    const fetchAccount = async () => {
+      if (user) {
+        try {
+          const response = await axios.get(`http://localhost:3000/api/mockTrading/mockAccount/${user._id}`);
+          setAccount(response.data);
+        } catch (error) {
+          console.error('Error fetching account data:', error);
+        }
+      }
+    };
 
-  const addTrade = (newTrade) => {
-    setAccount(prevAccount => ({
-      ...prevAccount,
-      // Update logic for cash and holdings
-    }));
-  };
+    fetchAccount();
+  }, [user]);
 
-  return (
-    <div>
-      <h1>Mock Trading</h1>
-      {account && <MockTradingSummary account={account} />}
-      <MockTradingForm addTrade={addTrade} />
-    </div>
-  );
+  if (!user) {
+    return <div>Please log in to view your mock account.</div>;
+  }
+
+  if (!account) {
+    return <div>Loading...</div>;
+  }
+
+  return <MockAccountInfo account={account} />;
 };
 
 export default MockTrading;

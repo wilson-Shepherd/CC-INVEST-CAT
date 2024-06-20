@@ -1,4 +1,5 @@
 import User from '../models/user.js';
+import MockAccount from '../models/mockAccount.js';
 import bcrypt from 'bcryptjs';
 import { signJWT } from '../utils/jwt.js';
 
@@ -8,7 +9,13 @@ export const registerUser = async (req, res) => {
   try {
     const user = new User({ username, email, password });
     await user.save();
-    res.status(201).json({ message: 'User registered successfully' });
+
+    const mockAccount = new MockAccount({ userId: user._id });
+    await mockAccount.save();
+
+    const token = await signJWT(user._id);
+
+    res.status(201).json({ message: 'User registered successfully', user, token });
   } catch (error) {
     console.error('Error registering user:', error);
     if (error.code === 11000) {
@@ -36,7 +43,7 @@ export const loginUser = async (req, res) => {
     }
 
     const token = await signJWT(user._id);
-    res.json({ token });
+    res.json({ message: 'Login successful', user, token });
   } catch (error) {
     console.error('Error logging in user:', error);
     if (error.name === 'MongoError') {

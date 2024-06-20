@@ -1,19 +1,16 @@
-import BinanceWebSocket from './webSocket.js';
-
-const priceCache = new Map();
-const binanceWebSocket = new BinanceWebSocket();
-
-binanceWebSocket.on('tickerData', (data) => {
-  const symbol = data.s.toLowerCase();
-  const price = parseFloat(data.c);
-  priceCache.set(symbol, price);
-});
+import binanceClient from './client.js';
 
 export const getPrice = async (symbol) => {
-  const cachedPrice = priceCache.get(symbol.toLowerCase());
-  if (cachedPrice) {
-    return cachedPrice;
-  } else {
+  try {
+    const client = binanceClient();
+    const prices = await client.prices();
+    const price = prices[symbol.toUpperCase()];
+    if (!price) {
+      throw new Error(`Price for ${symbol} is not available`);
+    }
+    return parseFloat(price);
+  } catch (error) {
+    console.error('Error fetching price:', error.message);
     throw new Error(`Price for ${symbol} is not available`);
   }
 };

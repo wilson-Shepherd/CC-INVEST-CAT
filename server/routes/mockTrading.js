@@ -1,8 +1,8 @@
 import express from 'express';
-const router = express.Router();
-import { createMockTrade, getMockAccount } from '../controllers/mockTrading.js';
+import { getMockAccount } from '../controllers/mockTrading.js';
 
-router.post('/mockTrade', createMockTrade);
+const router = express.Router();
+
 router.get('/mockAccount/:userId', getMockAccount);
 
 export default router;

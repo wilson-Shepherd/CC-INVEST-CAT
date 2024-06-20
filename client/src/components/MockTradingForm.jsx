@@ -2,33 +2,54 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 const MockTradingForm = ({ addTrade }) => {
-  const [form, setForm] = useState({ symbol: '', amount: '', type: 'buy' });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
+  const [symbol, setSymbol] = useState('');
+  const [amount, setAmount] = useState('');
+  const [type, setType] = useState('buy');
+  const [price, setPrice] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch('/api/mockTrading/mockTrade', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    })
-    .then(response => response.json())
-    .then(data => addTrade(data))
-    .catch(error => console.error(error));
+    const newTrade = {
+      symbol,
+      amount: parseFloat(amount),
+      type,
+      price: parseFloat(price)
+    };
+    addTrade(newTrade);
+    setSymbol('');
+    setAmount('');
+    setPrice('');
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <input type="text" name="symbol" value={form.symbol} onChange={handleChange} placeholder="Symbol" required />
-      <input type="number" name="amount" value={form.amount} onChange={handleChange} placeholder="Amount" required />
-      <select name="type" value={form.type} onChange={handleChange}>
-        <option value="buy">Buy</option>
-        <option value="sell">Sell</option>
-      </select>
+      <div>
+        <label>
+          Symbol:
+          <input type="text" value={symbol} onChange={(e) => setSymbol(e.target.value)} />
+        </label>
+      </div>
+      <div>
+        <label>
+          Amount:
+          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+        </label>
+      </div>
+      <div>
+        <label>
+          Type:
+          <select value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+        </label>
+      </div>
+      <div>
+        <label>
+          Price:
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+        </label>
+      </div>
       <button type="submit">Submit</button>
     </form>
   );

@@ -1,54 +1,52 @@
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const BASE_URL = 'http://localhost:3000';
+import { AuthContext } from '../contexts/AuthContext';
 
 const Register = () => {
+  const { register } = useContext(AuthContext);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    if (!username || !email || !password) {
-      setError('請填寫所有欄位');
-      return;
-    }
-
-    try {
-      await axios.post(`${BASE_URL}/api/user/register`, { username, email, password });
-      alert('註冊成功!');
-      navigate('/login');
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || '發生未知錯誤';
-      setError('註冊失敗。' + errorMessage);
+    const result = await register(username, email, password);
+    if (result.success) {
+      setMessage('Registration successful! You will be redirected to the homepage in 5 seconds.');
+      setTimeout(() => {
+        navigate('/');
+      }, 5000);
+    } else {
+      setMessage('Registration failed. Please try again.');
     }
   };
 
   return (
     <div>
-      <h2>註冊</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleRegister}>
+      <form onSubmit={handleSubmit}>
         <div>
-          <label>使用者名稱</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+          <label>
+            Username:
+            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
+          </label>
         </div>
         <div>
-          <label>電子郵件</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label>
+            Email:
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </label>
         </div>
         <div>
-          <label>密碼</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <label>
+            Password:
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </label>
         </div>
-        <button type="submit">註冊</button>
+        <button type="submit">Register</button>
       </form>
+      {message && <p>{message}</p>}
     </div>
   );
 };
