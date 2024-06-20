@@ -1,10 +1,13 @@
 import User from '../models/user.js';
 import MockAccount from '../models/mockAccount.js';
-import bcrypt from 'bcryptjs';
 import { signJWT } from '../utils/jwt.js';
 
 export const registerUser = async (req, res) => {
   const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
 
   try {
     const user = new User({ username, email, password });
@@ -15,9 +18,16 @@ export const registerUser = async (req, res) => {
 
     const token = await signJWT(user._id);
 
-    res.status(201).json({ message: 'User registered successfully', user, token });
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email
+      },
+      token
+    });
   } catch (error) {
-    console.error('Error registering user:', error);
     if (error.code === 11000) {
       res.status(400).json({ message: 'Username or email already exists' });
     } else if (error.name === 'ValidationError' && error.errors.password) {
@@ -31,6 +41,10 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -43,13 +57,16 @@ export const loginUser = async (req, res) => {
     }
 
     const token = await signJWT(user._id);
-    res.json({ message: 'Login successful', user, token });
+    res.json({
+      message: 'Login successful',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email
+      },
+      token
+    });
   } catch (error) {
-    console.error('Error logging in user:', error);
-    if (error.name === 'MongoError') {
-      res.status(400).json({ message: 'Invalid email or password' });
-    } else {
-      res.status(500).json({ message: 'Internal Server Error' });
-    }
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
