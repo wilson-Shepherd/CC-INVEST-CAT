@@ -1,4 +1,4 @@
-import dcClient from './app.js';
+import dcClient from "./app.js";
 
 export async function sendNotification(channelId, message) {
   try {
@@ -6,9 +6,9 @@ export async function sendNotification(channelId, message) {
     if (channel) {
       await channel.send(message);
     } else {
-      console.error('Channel not found');
+      console.error("Channel not found");
     }
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error("Error sending notification:", error);
   }
 }

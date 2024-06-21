@@ -14,7 +14,7 @@ const RedirectRoute = ({ element }) => {
 };
 
 RedirectRoute.propTypes = {
-  element: PropTypes.element.isRequired,
+  element: PropTypes.node.isRequired,
 };
 
 export default RedirectRoute;

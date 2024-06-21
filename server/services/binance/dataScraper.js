@@ -1,5 +1,5 @@
-import axios from 'axios';
-import binanceClient from './client.js';
+import axios from "axios";
+import binanceClient from "./client.js";
 
 class BinanceDataScraper {
   constructor() {
@@ -20,7 +20,10 @@ class BinanceDataScraper {
           limit: 1000,
         };
 
-        const response = await axios.get('https://api.binance.com/api/v3/klines', { params });
+        const response = await axios.get(
+          "https://api.binance.com/api/v3/klines",
+          { params },
+        );
         const candles = response.data;
 
         if (candles.length === 0) {
@@ -32,7 +35,7 @@ class BinanceDataScraper {
         fetchStartTime = candles[candles.length - 1][6] + 1;
       }
 
-      return allCandles.map(c => ({
+      return allCandles.map((c) => ({
         openTime: c[0],
         open: parseFloat(c[1]),
         high: parseFloat(c[2]),
@@ -42,7 +45,7 @@ class BinanceDataScraper {
         closeTime: c[6],
       }));
     } catch (error) {
-      console.error('Error fetching historical data:', error);
+      console.error("Error fetching historical data:", error);
       throw error;
     }
   }
@@ -58,10 +61,13 @@ class BinanceDataScraper {
     };
 
     try {
-      const response = await axios.get('https://api.binance.com/api/v3/klines', { params });
+      const response = await axios.get(
+        "https://api.binance.com/api/v3/klines",
+        { params },
+      );
       return response.data;
     } catch (error) {
-      console.error('Error fetching Klines from Binance:', error.message);
+      console.error("Error fetching Klines from Binance:", error.message);
       throw error;
     }
   }

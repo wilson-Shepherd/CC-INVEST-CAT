@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const { Schema } = mongoose;
 
@@ -15,7 +15,7 @@ const UserSchema = new Schema({
     required: true,
     unique: true,
     trim: true,
-    match: [/.+\@.+\..+/, 'Please fill a valid email address'],
+    match: [/.+\@.+\..+/, "Please fill a valid email address"],
   },
   password: {
     type: String,
@@ -28,8 +28,8 @@ const UserSchema = new Schema({
   },
 });
 
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
     return next();
   }
   try {
@@ -41,6 +41,6 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.model("User", UserSchema);
 
 export default User;

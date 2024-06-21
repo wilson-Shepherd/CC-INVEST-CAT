@@ -1,4 +1,4 @@
-import { sendNotification } from '../services/discordBot/bot.js';
+import { sendNotification } from "../services/discordBot/bot.js";
 
 export const notify = async (req, res) => {
   const { message } = req.body;
@@ -6,9 +6,9 @@ export const notify = async (req, res) => {
 
   try {
     await sendNotification(channelId, message);
-    res.status(200).send('Notification sent');
+    res.status(200).send("Notification sent");
   } catch (error) {
-    console.error('Error sending notification:', error);
-    res.status(500).send('Failed to send notification');
+    console.error("Error sending notification:", error);
+    res.status(500).send("Failed to send notification");
   }
 };

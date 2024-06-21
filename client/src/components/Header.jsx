@@ -18,7 +18,6 @@ const Header = () => {
         {!user && <li><Link to="/register">Register</Link></li>}
         {!user && <li><Link to="/login">Login</Link></li>}
         <li><Link to="/live-data">Live Data</Link></li>
-        <li><Link to="/historical-data">Historical Data</Link></li>
         <li><Link to="/kline">Kline</Link></li>
         <li><Link to="/mock-trading">Mock Trading</Link></li>
         {user && <li><button onClick={handleLogout}>Logout</button></li>}

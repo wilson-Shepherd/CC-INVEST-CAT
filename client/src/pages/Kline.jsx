@@ -8,7 +8,7 @@ const Kline = () => {
 
   const fetchKlineData = async ({ symbol, interval, startTime, endTime, timeZone }) => {
     try {
-      const response = await axios.get('http://localhost:3000/api/ticker/klines', {
+      const response = await axios.get('http://localhost:3000/api/tickers/klines', {
         params: { symbol, interval, startTime, endTime, timeZone },
       });
       setData(response.data);

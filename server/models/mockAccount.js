@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
@@ -17,10 +17,10 @@ const MockAccountSchema = new Schema({
     type: Map,
     of: Number,
     default: {
-      btc: 1,
-      eth: 10,
-      usdt: 1000,
-      bnb: 5,
+      BTCUSDT: 1,
+      ETHUSDT: 10,
+      USDT: 1000,
+      BNBUSDT: 5,
     },
   },
   createdAt: {
@@ -29,6 +29,6 @@ const MockAccountSchema = new Schema({
   },
 });
 
-const MockAccount = mongoose.model('MockAccount', MockAccountSchema);
+const MockAccount = mongoose.model("MockAccount", MockAccountSchema);
 
 export default MockAccount;
