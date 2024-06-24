@@ -1,6 +1,6 @@
+import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import PropTypes from 'prop-types';
 
 const MockTradingForm = ({ userId, onSubmit }) => {
   const [symbol, setSymbol] = useState('');
@@ -12,11 +12,8 @@ const MockTradingForm = ({ userId, onSubmit }) => {
     const fetchAvailableCryptos = async () => {
       try {
         const response = await axios.get('http://localhost:3000/api/mockTrading/availableCryptos');
-        const usdtCryptos = response.data.filter(crypto => crypto.includes('USDT'));
-        setAvailableCryptos(usdtCryptos);
-        if (usdtCryptos.length > 0) {
-          setSymbol(usdtCryptos[0]);
-        }
+        const filteredCryptos = response.data.filter(crypto => crypto.endsWith('USDT'));
+        setAvailableCryptos(filteredCryptos);
       } catch (error) {
         console.error('Error fetching available cryptos:', error);
       }
@@ -31,11 +28,9 @@ const MockTradingForm = ({ userId, onSubmit }) => {
       const response = await axios.post(`http://localhost:3000/api/mockTrading/users/${userId}/mockOrders`, {
         symbol,
         quantity: parseFloat(quantity),
-        orderType,
+        orderType
       });
       onSubmit(response.data);
-      setQuantity('');
-      setOrderType('buy');
     } catch (error) {
       console.error('Error placing order:', error);
     }
@@ -44,35 +39,48 @@ const MockTradingForm = ({ userId, onSubmit }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label>
-          Symbol:
-          <select value={symbol} onChange={(e) => setSymbol(e.target.value)}>
-            {availableCryptos.map((crypto) => (
-              <option key={crypto} value={crypto}>
-                {crypto}
-              </option>
-            ))}
-          </select>
-        </label>
+        <label htmlFor="symbol">Symbol:</label>
+        <select
+          id="symbol"
+          value={symbol}
+          onChange={(e) => setSymbol(e.target.value)}
+          required
+        >
+          <option value="">Select a symbol</option>
+          {availableCryptos.map(crypto => (
+            <option key={crypto} value={crypto}>{crypto}</option>
+          ))}
+        </select>
       </div>
       <div>
+        <label htmlFor="quantity">Quantity:</label>
+        <input
+          id="quantity"
+          type="number"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          required
+        />
+      </div>
+      <div>
+        <label>Order Type:</label>
         <label>
-          Quantity:
           <input
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
+            type="radio"
+            value="buy"
+            checked={orderType === 'buy'}
+            onChange={() => setOrderType('buy')}
           />
+          Buy
         </label>
-      </div>
-      <div>
         <label>
-          Order Type:
-          <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
-            <option value="buy">Buy</option>
-            <option value="sell">Sell</option>
-          </select>
+          <input
+            type="radio"
+            value="sell"
+            checked={orderType === 'sell'}
+            onChange={() => setOrderType('sell')}
+          />
+          Sell
         </label>
       </div>
       <button type="submit">Place Order</button>
