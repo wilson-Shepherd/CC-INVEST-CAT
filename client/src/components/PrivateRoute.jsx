@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import PropTypes from 'prop-types';
 
-const PrivateRoute = ({ element }) => {
+const PrivateRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
   const [countdown, setCountdown] = useState(5);
@@ -35,11 +35,11 @@ const PrivateRoute = ({ element }) => {
     );
   }
 
-  return element;
+  return children;
 };
 
 PrivateRoute.propTypes = {
-  element: PropTypes.element.isRequired,
+  children: PropTypes.node.isRequired,
 };
 
 export default PrivateRoute;
