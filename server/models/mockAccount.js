@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
@@ -17,10 +17,7 @@ const MockAccountSchema = new Schema({
     type: Map,
     of: Number,
     default: {
-      BTCUSDT: 1,
-      ETHUSDT: 10,
       USDT: 1000,
-      BNBUSDT: 5,
     },
   },
   createdAt: {
@@ -29,6 +26,25 @@ const MockAccountSchema = new Schema({
   },
 });
 
-const MockAccount = mongoose.model("MockAccount", MockAccountSchema);
+MockAccountSchema.methods.deposit = function (amount) {
+  if (amount <= 0) {
+    throw new Error('Deposit amount must be positive');
+  }
+  this.cash += amount;
+  return this.save();
+};
+
+MockAccountSchema.methods.withdraw = function (amount) {
+  if (amount <= 0) {
+    throw new Error('Withdrawal amount must be positive');
+  }
+  if (this.cash < amount) {
+    throw new Error('Insufficient funds');
+  }
+  this.cash -= amount;
+  return this.save();
+};
+
+const MockAccount = mongoose.model('MockAccount', MockAccountSchema);
 
 export default MockAccount;
