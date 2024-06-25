@@ -1,15 +1,13 @@
 import PropTypes from 'prop-types';
 
-const MockOrdersList = ({ orders, onSelectOrder }) => {
+const FuturesOrdersList = ({ orders, onOrderClick }) => {
   return (
     <div>
       <h2>All Orders</h2>
       <ul>
         {orders.map((order) => (
-          <li key={order._id}>
-            <span onClick={() => onSelectOrder(order._id)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-              {order.symbol}
-            </span> - {order.orderType} - {order.quantity} - {order.status}
+          <li key={order._id} onClick={() => onOrderClick(order)}>
+            {order.symbol} - {order.orderType} - {order.quantity} - {order.status}
           </li>
         ))}
       </ul>
@@ -17,7 +15,7 @@ const MockOrdersList = ({ orders, onSelectOrder }) => {
   );
 };
 
-MockOrdersList.propTypes = {
+FuturesOrdersList.propTypes = {
   orders: PropTypes.arrayOf(
     PropTypes.shape({
       _id: PropTypes.string.isRequired,
@@ -27,7 +25,7 @@ MockOrdersList.propTypes = {
       status: PropTypes.string.isRequired,
     })
   ).isRequired,
-  onSelectOrder: PropTypes.func.isRequired,
+  onOrderClick: PropTypes.func.isRequired,
 };
 
-export default MockOrdersList;
+export default FuturesOrdersList;

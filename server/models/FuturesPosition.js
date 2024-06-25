@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const orderSchema = new Schema({
+const FuturesPositionSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     required: true,
@@ -18,25 +18,20 @@ const orderSchema = new Schema({
     required: true,
     min: 0,
   },
-  orderType: {
-    type: String,
-    enum: ["buy", "sell"],
-    required: true,
-  },
-  price: {
+  entryPrice: {
     type: Number,
     required: true,
     min: 0,
   },
-  fee: {
+  leverage: {
     type: Number,
     required: true,
-    min: 0,
+    min: 1,
   },
-  status: {
+  positionType: {
     type: String,
-    enum: ["pending", "completed"],
-    default: "pending",
+    enum: ["long", "short"],
+    required: true,
   },
   createdAt: {
     type: Date,
@@ -44,8 +39,9 @@ const orderSchema = new Schema({
   },
 });
 
-orderSchema.index({ userId: 1, createdAt: -1 });
+const FuturesPosition = mongoose.model(
+  "FuturesPosition",
+  FuturesPositionSchema,
+);
 
-const MockOrder = mongoose.model("MockOrder", orderSchema);
-
-export default MockOrder;
+export default FuturesPosition;

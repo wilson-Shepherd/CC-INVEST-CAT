@@ -6,7 +6,6 @@ const AuthContext = createContext();
 
 axios.defaults.baseURL = 'http://localhost:3000';
 
-// 添加一个请求拦截器
 axios.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
@@ -18,12 +17,10 @@ axios.interceptors.request.use(
   error => Promise.reject(error)
 );
 
-// 添加一个响应拦截器
 axios.interceptors.response.use(
   response => response,
   error => {
     if (error.response && error.response.status === 401) {
-      // 如果token过期，清除localStorage并重定向到登录页
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       window.location.href = '/login';
@@ -51,7 +48,7 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       localStorage.setItem('token', response.data.token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-      window.location.href = '/mock-trading'; // 登录成功后重定向到交易页面
+      window.location.href = '/spot-trading';
     } catch (error) {
       console.error('Login failed', error);
       throw error;
@@ -65,7 +62,7 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       localStorage.setItem('token', response.data.token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-      window.location.href = '/mock-trading'; // 注册成功后重定向到交易页面
+      window.location.href = '/spot-trading';
     } catch (error) {
       console.error('Registration failed', error);
       throw error;
@@ -77,7 +74,7 @@ const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
-    window.location.href = '/login'; // 登出后重定向到登录页面
+    window.location.href = '/login';
   };
 
   return (

@@ -1,5 +1,6 @@
 import User from "../models/user.js";
-import MockAccount from "../models/mockAccount.js";
+import SpotAccount from "../models/SpotAccount.js";
+import FuturesAccount from "../models/FuturesAccount.js";
 import { signJWT } from "../utils/jwt.js";
 import bcrypt from "bcryptjs";
 
@@ -14,8 +15,11 @@ export const registerUser = async (req, res) => {
     const user = new User({ username, email, password });
     await user.save();
 
-    const mockAccount = new MockAccount({ userId: user._id });
-    await mockAccount.save();
+    const spotAccount = new SpotAccount({ userId: user._id });
+    await spotAccount.save();
+
+    const futuresAccount = new FuturesAccount({ userId: user._id });
+    await futuresAccount.save();
 
     const token = await signJWT(user._id);
 

@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 
-const MockAccountInfo = ({ account }) => {
+const SpotAccountInfo = ({ account }) => {
   const holdings = Object.entries(account.holdings);
 
   return (
     <div>
-      <h2>Mock Account Info</h2>
+      <h2>Spot Account Info</h2>
       <div>
-        <strong>Cash:</strong> {account.cash}
+        <strong>Balance:</strong> {account.balance}
       </div>
       <div>
         <strong>Holdings:</strong>
@@ -23,11 +23,11 @@ const MockAccountInfo = ({ account }) => {
   );
 };
 
-MockAccountInfo.propTypes = {
+SpotAccountInfo.propTypes = {
   account: PropTypes.shape({
-    cash: PropTypes.number.isRequired,
+    balance: PropTypes.number.isRequired,
     holdings: PropTypes.objectOf(PropTypes.number).isRequired,
   }).isRequired,
 };
 
-export default MockAccountInfo;
+export default SpotAccountInfo;

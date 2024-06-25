@@ -22,6 +22,14 @@ const UserSchema = new Schema({
     required: true,
     minlength: 6,
   },
+  spotAccount: {
+    type: Schema.Types.ObjectId,
+    ref: "SpotAccount",
+  },
+  futuresAccount: {
+    type: Schema.Types.ObjectId,
+    ref: "FuturesAccount",
+  },
   createdAt: {
     type: Date,
     default: Date.now,
