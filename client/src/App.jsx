@@ -6,6 +6,7 @@ import LiveData from './pages/LiveData';
 import Kline from './pages/Kline';
 import SpotTrading from './pages/SpotTrading';
 import FuturesTrading from './pages/FuturesTrading';
+import Admin from './pages/Admin';
 import Header from './components/Header';
 import PrivateRoute from './components/PrivateRoute';
 import RedirectRoute from './components/RedirectRoute';
@@ -23,6 +24,7 @@ const App = () => {
           <Route path="/login" element={<RedirectRoute><Login /></RedirectRoute>} />
           <Route path="/spot-trading" element={<PrivateRoute><SpotTrading /></PrivateRoute>} />
           <Route path="/futures-trading" element={<PrivateRoute><FuturesTrading /></PrivateRoute>} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/live-data" element={<LiveData />} />
           <Route path="/kline" element={<Kline />} />
         </Routes>

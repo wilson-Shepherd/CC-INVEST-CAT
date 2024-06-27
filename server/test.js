@@ -1,17 +1,40 @@
-import bcrypt from "bcryptjs";
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
-const originalPassword = "test02";
+dotenv.config();
 
-bcrypt.hash(originalPassword, 10, (err, hashedPassword) => {
-  if (err) {
-    return console.error("Error hashing password:", err);
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("Error connecting to MongoDB:", err.message);
+    process.exit(1);
   }
-  console.log("Hashed password:", hashedPassword);
+};
 
-  bcrypt.compare(originalPassword, hashedPassword, (err, result) => {
-    if (err) {
-      return console.error("Error comparing password:", err);
+const clearDB = async () => {
+  try {
+    const collections = await mongoose.connection.db.collections();
+
+    for (let collection of collections) {
+      await collection.deleteMany({});
     }
-    console.log("Password comparison result:", result);
-  });
-});
+
+    console.log("Database cleared");
+  } catch (err) {
+    console.error("Error clearing database:", err.message);
+  } finally {
+    mongoose.connection.close();
+  }
+};
+
+const run = async () => {
+  await connectDB();
+  await clearDB();
+};
+
+run();
