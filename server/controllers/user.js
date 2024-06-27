@@ -1,4 +1,4 @@
-import User from "../models/user.js";
+import User from "../models/User.js";
 import SpotAccount from "../models/SpotAccount.js";
 import FuturesAccount from "../models/FuturesAccount.js";
 import { signJWT } from "../utils/jwt.js";

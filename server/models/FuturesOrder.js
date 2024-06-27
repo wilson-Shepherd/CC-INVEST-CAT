@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const futuresOrderSchema = new Schema({
+const FuturesOrderSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     required: true,
@@ -20,7 +20,7 @@ const futuresOrderSchema = new Schema({
   },
   orderType: {
     type: String,
-    enum: ["buy-market", "sell-market", "buy-limit", "sell-limit"],
+    enum: ["buy-limit", "sell-limit", "buy-market", "sell-market"],
     required: true,
   },
   price: {
@@ -28,6 +28,14 @@ const futuresOrderSchema = new Schema({
     required: function () {
       return this.orderType.includes("limit");
     },
+    min: 0,
+  },
+  entryPrice: {
+    type: Number,
+    min: 0,
+  },
+  exitPrice: {
+    type: Number,
     min: 0,
   },
   fee: {
@@ -40,17 +48,17 @@ const futuresOrderSchema = new Schema({
     enum: ["pending", "completed"],
     default: "pending",
   },
-  leverage: {
-    type: Number,
-    required: true,
-    min: 1,
-  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  executedAt: {
+    type: Date,
+  },
 });
 
-const FuturesOrder = mongoose.model("FuturesOrder", futuresOrderSchema);
+FuturesOrderSchema.index({ userId: 1, createdAt: -1 });
+
+const FuturesOrder = mongoose.model("FuturesOrder", FuturesOrderSchema);
 
 export default FuturesOrder;

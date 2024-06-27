@@ -3,7 +3,6 @@ import cron from "node-cron";
 import {
   getCurrentPrice,
   logError,
-  ORDER_EXPIRY_DAYS,
   TRANSACTION_FEE_RATE,
   MARGIN_RATE,
 } from "../utils/tradeUtils.js";
@@ -12,13 +11,10 @@ import SpotOrder from "../models/SpotOrder.js";
 import FuturesAccount from "../models/FuturesAccount.js";
 import SpotAccount from "../models/SpotAccount.js";
 import FuturesPosition from "../models/FuturesPosition.js";
-import { calculateUserRiskRate } from "../controllers/futuresTrading.js";
+import { executeOrder as executeSpotOrder} from "../controllers/spotTrading.js";
+import { executeOrder as executeFuturesOrder ,calculateUserRiskRate } from "../controllers/futuresTrading.js";
 
-const executePendingOrders = async (
-  OrderModel,
-  AccountModel,
-  executeOrderFunction,
-) => {
+export const executePendingOrders = async (OrderModel, AccountModel, executeOrderFunction) => {
   try {
     const pendingOrders = await OrderModel.find({ status: "pending" });
 
@@ -33,10 +29,31 @@ const executePendingOrders = async (
         session.startTransaction();
 
         try {
-          const account = await AccountModel.findOne({
-            userId: order.userId,
-          }).session(session);
-          await executeOrderFunction(order, account, session);
+          const account = await AccountModel.findOne({ userId: order.userId }).session(session);
+          if (!account) {
+            throw new Error(`Account not found for user ${order.userId}`);
+          }
+
+          if (order.orderType.startsWith("sell")) {
+            const holdings = new Decimal(account.holdings.get(order.symbol) || 0);
+            if (holdings.lessThan(order.quantity)) {
+              await session.abortTransaction();
+              logError(new Error("Insufficient assets to sell"), "executePendingOrders", {
+                orderId: order._id,
+                userId: order.userId,
+              });
+              continue;
+            }
+          }
+
+          if (order.orderType.startsWith("buy")) {
+            order.entryPrice = currentPrice;
+          } else if (order.orderType.startsWith("sell")) {
+            order.exitPrice = currentPrice;
+          }
+          order.executedAt = new Date();
+
+          await executeOrderFunction(order, account, currentPrice, session);
 
           await account.save({ session });
           await session.commitTransaction();
@@ -56,21 +73,7 @@ const executePendingOrders = async (
   }
 };
 
-const cleanUpExpiredOrders = async (OrderModel, expiryDays) => {
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() - expiryDays);
-
-  try {
-    const result = await OrderModel.deleteMany({
-      createdAt: { $lt: expiryDate },
-    });
-    console.log(`Deleted ${result.deletedCount} expired orders.`);
-  } catch (error) {
-    logError(error, "cleanUpExpiredOrders");
-  }
-};
-
-const monitorMargin = async () => {
+export const monitorMargin = async () => {
   const users = await FuturesAccount.find().lean();
   for (const user of users) {
     try {
@@ -126,7 +129,7 @@ const forceClosePosition = async (position, user) => {
   }
 };
 
-const monitorRiskRates = async () => {
+export const monitorRiskRates = async () => {
   const users = await FuturesAccount.find().lean();
   for (const user of users) {
     try {
@@ -140,24 +143,11 @@ const monitorRiskRates = async () => {
   }
 };
 
-cron.schedule("0 2 * * *", () =>
-  cleanUpExpiredOrders(FuturesOrder, ORDER_EXPIRY_DAYS),
-);
-cron.schedule("0 2 * * *", () =>
-  cleanUpExpiredOrders(SpotOrder, ORDER_EXPIRY_DAYS),
-);
 cron.schedule("*/5 * * * *", () =>
-  executePendingOrders(FuturesOrder, FuturesAccount, executeOrder),
+  executePendingOrders(FuturesOrder, FuturesAccount, executeFuturesOrder),
 );
-cron.schedule("*/5 * * * *", () =>
-  executePendingOrders(SpotOrder, SpotAccount, executeOrder),
+cron.schedule("*/1 * * * *", () =>
+  executePendingOrders(SpotOrder, SpotAccount, executeSpotOrder),
 );
 cron.schedule("0 * * * *", () => monitorMargin());
 cron.schedule("0 * * * *", () => monitorRiskRates());
-
-export {
-  executePendingOrders,
-  cleanUpExpiredOrders,
-  monitorMargin,
-  monitorRiskRates,
-};

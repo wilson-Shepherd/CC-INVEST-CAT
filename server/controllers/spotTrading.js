@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import SpotOrder from "../models/SpotOrder.js";
 import SpotAccount from "../models/SpotAccount.js";
 import {
@@ -7,27 +8,35 @@ import {
   PRICE_TOLERANCE,
   getAvailableCryptosUtil,
   validateAccount,
-  validateAmount,
 } from "../utils/tradeUtils.js";
-import mongoose from "mongoose";
+import Decimal from 'decimal.js';
 
 export const getSpotAccount = async (req, res) => {
   const { userId } = req.params;
   try {
-    const account = await SpotAccount.findOne({ userId }).lean();
+    const account = await SpotAccount.findOne({ userId });
+    if (!account) {
+      return res.status(404).json({ error: "Account not found" });
+    }
     validateAccount(account);
-    res
-      .status(200)
-      .json({ balance: account.balance, holdings: account.holdings });
+
+    const holdings = Object.fromEntries(account.holdings);
+
+    res.status(200).json({ balance: account.balance, holdings });
   } catch (error) {
     logError(error, "getSpotAccount");
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: "An error occurred while retrieving the account" });
   }
 };
 
 export const createSpotOrder = async (req, res) => {
-  const { symbol, quantity, orderType, price: frontEndPrice } = req.body;
+  const { symbol, quantity, orderType, price: limitPrice } = req.body;
   const { userId } = req.params;
+
+  if (isNaN(quantity) || new Decimal(quantity).lessThanOrEqualTo(0) || 
+      (orderType.includes("limit") && (isNaN(limitPrice) || new Decimal(limitPrice).lessThanOrEqualTo(0)))) {
+    return res.status(400).json({ message: "Invalid price or quantity" });
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -36,54 +45,30 @@ export const createSpotOrder = async (req, res) => {
     const account = await SpotAccount.findOne({ userId }).session(session);
     validateAccount(account);
 
-    const existingOrder = await SpotOrder.findOne({
+    const currentPrice = new Decimal(await getCurrentPrice(symbol));
+
+    if (orderType.includes("limit") && currentPrice.minus(limitPrice).abs().dividedBy(limitPrice).greaterThan(PRICE_TOLERANCE)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Price is out of allowable range, please try again" });
+    }
+
+    const orderData = {
       userId,
       symbol,
-      quantity,
+      quantity: new Decimal(quantity).toFixed(),
       orderType,
+      price: orderType.includes("limit") ? new Decimal(limitPrice).toFixed() : undefined,
+      fee: 0,
       status: "pending",
-    }).session(session);
-    if (existingOrder) {
-      return res
-        .status(400)
-        .json({ message: "Duplicate order detected, please try again" });
+      createdAt: new Date(),
+    };
+
+    let newOrder = await SpotOrder.create([orderData], { session });
+
+    if (orderType.includes("market")) {
+      console.log("Creating market order with current price:", currentPrice.toString());
+      await executeOrder(newOrder[0], account, currentPrice, session);
     }
-
-    const currentPrice = await getCurrentPrice(symbol);
-
-    if (
-      Math.abs(currentPrice - frontEndPrice) / frontEndPrice >
-      PRICE_TOLERANCE
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Price has changed, please try again" });
-    }
-
-    if (quantity <= 0 || currentPrice <= 0) {
-      throw new Error("Invalid quantity or price");
-    }
-
-    const totalCost = quantity * currentPrice;
-    const fee = totalCost * TRANSACTION_FEE_RATE;
-
-    let newOrder = await SpotOrder.create(
-      [
-        {
-          userId,
-          symbol,
-          quantity,
-          orderType,
-          price: currentPrice,
-          fee,
-          status: "pending",
-          createdAt: new Date(),
-        },
-      ],
-      { session },
-    );
-
-    await executeOrder(newOrder[0], account, session);
 
     await session.commitTransaction();
     res.status(201).json(newOrder[0]);
@@ -96,35 +81,27 @@ export const createSpotOrder = async (req, res) => {
   }
 };
 
-const executeOrder = async (order, account, session) => {
-  const totalCost = order.quantity * order.price;
-  const fee = totalCost * TRANSACTION_FEE_RATE;
+export const executeOrder = async (order, account, currentPrice, session) => {
+  const totalAmount = new Decimal(order.quantity).times(new Decimal(currentPrice || order.entryPrice || order.exitPrice));
+  const fee = totalAmount.times(TRANSACTION_FEE_RATE);
 
   try {
-    if (order.orderType === "buy") {
-      if (account.balance < totalCost + fee) {
+    if (order.orderType.startsWith("buy")) {
+      if (new Decimal(account.balance).lessThan(totalAmount.plus(fee))) {
         throw new Error("Insufficient funds");
       }
-      account.balance -= totalCost + fee;
-      account.holdings.set(
-        order.symbol,
-        (account.holdings.get(order.symbol) || 0) + order.quantity,
-      );
-    } else if (order.orderType === "sell") {
-      if (
-        !account.holdings.has(order.symbol) ||
-        account.holdings.get(order.symbol) < order.quantity
-      ) {
+      account.balance = new Decimal(account.balance).minus(totalAmount.plus(fee)).toFixed();
+      account.holdings.set(order.symbol, new Decimal(account.holdings.get(order.symbol) || 0).plus(order.quantity).toFixed());
+      order.entryPrice = order.entryPrice || currentPrice;
+    } else if (order.orderType.startsWith("sell")) {
+      if (!account.holdings.has(order.symbol) || new Decimal(account.holdings.get(order.symbol)).lessThan(order.quantity)) {
         throw new Error("Insufficient assets");
       }
-      const totalRevenue = totalCost - fee;
-      account.balance += totalRevenue;
-      account.holdings.set(
-        order.symbol,
-        account.holdings.get(order.symbol) - order.quantity,
-      );
-
-      if (account.holdings.get(order.symbol) === 0) {
+      const netRevenue = totalAmount.minus(fee);
+      account.balance = new Decimal(account.balance).plus(netRevenue).toFixed();
+      account.holdings.set(order.symbol, new Decimal(account.holdings.get(order.symbol)).minus(order.quantity).toFixed());
+      order.exitPrice = order.exitPrice || currentPrice;
+      if (new Decimal(account.holdings.get(order.symbol)).equals(0)) {
         account.holdings.delete(order.symbol);
       }
     }
@@ -132,11 +109,11 @@ const executeOrder = async (order, account, session) => {
     await account.save({ session });
 
     order.status = "completed";
+    order.fee = fee.toFixed();
+    order.executedAt = new Date();
     await order.save({ session });
 
-    console.log(
-      `Order executed: User ${order.userId}, Symbol ${order.symbol}, Quantity ${order.quantity}, Order Type ${order.orderType}, Price ${order.price}, Fee ${order.fee}`,
-    );
+    console.log(`Order executed: User ${order.userId}, Symbol ${order.symbol}, Quantity ${order.quantity}, Order Type ${order.orderType}, Entry Price ${order.entryPrice}, Exit Price ${order.exitPrice}, Fee ${order.fee}, Executed At ${order.executedAt}`);
   } catch (error) {
     logError(error, "executeOrder");
     throw error;

@@ -4,11 +4,12 @@ import cors from "cors";
 import connectDB from "./config/database.js";
 import tickerRoutes, { initWebSocketRoutes } from "./routes/ticker.js";
 import userRoutes from "./routes/user.js";
-import notificationRoutes from "./routes/dcNotification.js";
+// import notificationRoutes from "./routes/dcNotification.js";
 import spotTradingRoutes from "./routes/spotTrading.js";
 import futuresTradingRoutes from "./routes/futuresTrading.js";
 import { errorHandler } from "./utils/errorHandler.js";
-import dcClient from "./services/discordBot/app.js";
+// import dcClient from "./services/discordBot/app.js";
+// import "./services/trading/bot.js"
 import "./utils/orderScheduler.js";
 
 const app = express();
@@ -26,13 +27,13 @@ app.get("/", (req, res) => {
 
 app.use("/api/tickers", tickerRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/notifications", notificationRoutes);
+// app.use("/api/notifications", notificationRoutes);
 app.use("/api/spotTrading", spotTradingRoutes);
 app.use("/api/futuresTrading", futuresTradingRoutes);
 
-if (dcClient) {
-  console.log("Discord client initialized");
-}
+// if (dcClient) {
+//   console.log("Discord client initialized");
+// }
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

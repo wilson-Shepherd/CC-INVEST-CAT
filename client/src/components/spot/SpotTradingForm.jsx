@@ -15,7 +15,7 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
         const response = await axios.get('http://localhost:3000/api/spotTrading/availableCryptos');
         setAvailableCryptos(response.data.filter(symbol => symbol.endsWith('USDT')));
       } catch (error) {
-        console.error('Error fetching available cryptos:', error);
+        console.error('Error fetching available cryptos:', error.response ? error.response.data : error.message);
       }
     };
 
@@ -35,14 +35,13 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
       if (orderType.includes('limit')) {
         orderData.price = parseFloat(price);
       }
-
       const response = await axios.post(`http://localhost:3000/api/spotTrading/users/${userId}/orders`, orderData);
       onSubmit(response.data);
       setSymbol('');
       setQuantity('');
       setPrice('');
     } catch (error) {
-      console.error('Error placing order:', error);
+      console.error('Error placing order:', error.response ? error.response.data : error.message);
     }
   };
 

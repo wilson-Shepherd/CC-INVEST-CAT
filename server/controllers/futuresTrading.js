@@ -3,7 +3,6 @@ import FuturesAccount from "../models/FuturesAccount.js";
 import FuturesPosition from "../models/FuturesPosition.js";
 import mongoose from "mongoose";
 import {
-  validateAmount,
   validateAccount,
   logError,
   getCurrentPrice,
@@ -28,142 +27,94 @@ export const getFuturesAccount = async (req, res) => {
 };
 
 export const createFuturesOrder = async (req, res) => {
-  const { symbol, quantity, orderType, price, leverage } = req.body;
+  const { symbol, quantity, orderType, price: limitPrice, leverage } = req.body;
   const { userId } = req.params;
+
+  if (isNaN(quantity) || new Decimal(quantity).lessThanOrEqualTo(0) || 
+      (orderType.includes("limit") && (isNaN(limitPrice) || new Decimal(limitPrice).lessThanOrEqualTo(0)))) {
+    return res.status(400).json({ message: "Invalid price or quantity" });
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const account = await FuturesAccount.findOne({ userId }).session(session);
-    if (!account) {
-      throw new Error("Account not found");
+    validateAccount(account);
+
+    const currentPrice = new Decimal(await getCurrentPrice(symbol));
+
+    if (orderType.includes("limit") && currentPrice.minus(limitPrice).abs().dividedBy(limitPrice).greaterThan(PRICE_TOLERANCE)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Price is out of allowable range, please try again" });
     }
 
-    const currentPrice = await getCurrentPrice(symbol);
-    if (orderType.includes("limit") && (price <= 0 || isNaN(price))) {
-      throw new Error("Invalid price for limit order");
-    }
-
-    const orderPrice = orderType.includes("limit") ? price : currentPrice;
-    const totalCost = (quantity * orderPrice) / leverage;
-    const fee = totalCost * TRANSACTION_FEE_RATE;
-
-    if (orderType.startsWith("buy")) {
-      if (account.balance < totalCost + fee) {
-        throw new Error("Insufficient funds");
-      }
-    }
-
-    const order = new FuturesOrder({
+    const orderData = {
       userId,
       symbol,
-      quantity,
+      quantity: new Decimal(quantity).toFixed(),
       orderType,
-      price: orderPrice,
+      price: orderType.includes("limit") ? new Decimal(limitPrice).toFixed() : undefined,
       leverage,
-      fee,
-      status: orderType.includes("limit") ? "pending" : "completed",
-    });
-    await order.save({ session });
+      fee: 0,
+      status: "pending",
+      createdAt: new Date(),
+    };
 
-    if (!orderType.includes("limit")) {
-      await executeOrder(order, account, session);
+    let newOrder = await FuturesOrder.create([orderData], { session });
+
+    if (orderType.includes("market")) {
+      await executeOrder(newOrder[0], account, currentPrice, session);
     }
 
-    await account.save({ session });
     await session.commitTransaction();
-    session.endSession();
-
-    res.status(201).json(order);
+    res.status(201).json(newOrder[0]);
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
     logError(error, "createFuturesOrder");
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Internal server error" });
+  } finally {
+    session.endSession();
   }
 };
 
-const executeOrder = async (order, account, session) => {
-  const totalCost = (order.quantity * order.price) / order.leverage;
-  const fee = totalCost * TRANSACTION_FEE_RATE;
-  const positionType = order.orderType.startsWith("buy") ? "long" : "short";
+export const executeOrder = async (order, account, currentPrice, session) => {
+  const totalAmount = new Decimal(order.quantity).times(currentPrice || order.entryPrice || order.exitPrice);
+  const fee = totalAmount.times(TRANSACTION_FEE_RATE);
 
-  let position = await FuturesPosition.findOne({
-    userId: order.userId,
-    symbol: order.symbol,
-  });
-
-  if (order.orderType === "buy-market" || order.orderType === "buy-limit") {
-    if (account.balance < totalCost + fee) {
-      throw new Error("Insufficient funds");
-    }
-    account.balance -= totalCost + fee;
-
-    if (!position) {
-      position = new FuturesPosition({
-        userId: order.userId,
-        symbol: order.symbol,
-        quantity: order.quantity,
-        leverage: order.leverage,
-        entryPrice: order.price,
-        positionType,
-      });
-    } else {
-      position.entryPrice =
-        (position.entryPrice * position.quantity +
-          order.price * order.quantity) /
-        (position.quantity + order.quantity);
-      position.quantity += order.quantity;
-    }
-  } else if (
-    order.orderType === "sell-market" ||
-    order.orderType === "sell-limit"
-  ) {
-    if (!position) {
-      position = new FuturesPosition({
-        userId: order.userId,
-        symbol: order.symbol,
-        quantity: order.quantity,
-        leverage: order.leverage,
-        entryPrice: order.price,
-        positionType,
-      });
-    } else if (position.positionType === "short") {
-      position.entryPrice =
-        (position.entryPrice * position.quantity +
-          order.price * order.quantity) /
-        (position.quantity + order.quantity);
-      position.quantity += order.quantity;
-    } else if (position.positionType === "long") {
-      if (position.quantity < order.quantity) {
-        throw new Error("Insufficient assets to sell");
+  try {
+    if (order.orderType.startsWith("buy")) {
+      if (new Decimal(account.balance).lessThan(totalAmount.plus(fee))) {
+        throw new Error("Insufficient funds");
       }
-      const totalRevenue = totalCost - fee;
-      account.balance += totalRevenue;
-      position.quantity -= order.quantity;
-      if (position.quantity === 0) {
-        await FuturesPosition.deleteOne({
-          userId: order.userId,
-          symbol: order.symbol,
-        }).session(session);
-      } else {
-        position.entryPrice =
-          (position.entryPrice * position.quantity -
-            order.price * order.quantity) /
-          position.quantity;
+      account.balance = new Decimal(account.balance).minus(totalAmount.plus(fee)).toFixed();
+      account.holdings.set(order.symbol, new Decimal(account.holdings.get(order.symbol) || 0).plus(order.quantity).toFixed());
+      order.entryPrice = order.entryPrice || currentPrice || totalAmount.dividedBy(order.quantity).toFixed();
+    } else if (order.orderType.startsWith("sell")) {
+      if (!account.holdings.has(order.symbol) || new Decimal(account.holdings.get(order.symbol)).lessThan(order.quantity)) {
+        throw new Error("Insufficient assets");
+      }
+      const netRevenue = totalAmount.minus(fee);
+      account.balance = new Decimal(account.balance).plus(netRevenue).toFixed();
+      account.holdings.set(order.symbol, new Decimal(account.holdings.get(order.symbol)).minus(order.quantity).toFixed());
+      order.exitPrice = order.exitPrice || currentPrice || totalAmount.dividedBy(order.quantity).toFixed();
+      if (new Decimal(account.holdings.get(order.symbol)).equals(0)) {
+        account.holdings.delete(order.symbol);
       }
     }
+
+    await account.save({ session });
+
+    order.status = "completed";
+    order.fee = fee.toFixed();
+    order.executedAt = new Date();
+    await order.save({ session });
+
+    console.log(`Order executed: User ${order.userId}, Symbol ${order.symbol}, Quantity ${order.quantity}, Order Type ${order.orderType}, Entry Price ${order.entryPrice}, Exit Price ${order.exitPrice}, Fee ${order.fee}, Executed At ${order.executedAt}`);
+  } catch (error) {
+    logError(error, "executeOrder");
+    throw error;
   }
-
-  await position.save({ session });
-
-  order.status = "completed";
-  await order.save({ session });
-
-  console.log(
-    `Order executed: User ${order.userId}, Symbol ${order.symbol}, Quantity ${order.quantity}, Order Type ${order.orderType}, Price ${order.price}, Fee ${order.fee}`,
-  );
 };
 
 export const getFuturesOrders = async (req, res) => {
@@ -208,14 +159,14 @@ export const getPositions = async (req, res) => {
 
     const positionsWithCurrentPrice = await Promise.all(
       positions.map(async (position) => {
-        const currentPrice = await getCurrentPrice(position.symbol);
-        const unrealizedPnL =
-          (currentPrice - position.entryPrice) *
-          position.quantity *
-          position.leverage;
+        const currentPrice = new Decimal(await getCurrentPrice(position.symbol));
+        const unrealizedPnL = currentPrice.minus(position.entryPrice)
+                                          .times(position.quantity)
+                                          .times(position.leverage)
+                                          .toFixed();
         return {
           ...position,
-          currentPrice,
+          currentPrice: currentPrice.toFixed(),
           unrealizedPnL,
         };
       }),
@@ -248,15 +199,13 @@ export const closePosition = async (req, res) => {
       throw new Error("Account not found");
     }
 
-    const currentPrice = await getCurrentPrice(position.symbol);
-    const totalRevenue = (position.quantity * currentPrice) / position.leverage;
-    const fee = totalRevenue * TRANSACTION_FEE_RATE;
+    const currentPrice = new Decimal(await getCurrentPrice(position.symbol));
+    const totalRevenue = currentPrice.times(position.quantity).dividedBy(position.leverage);
+    const fee = totalRevenue.times(TRANSACTION_FEE_RATE);
 
-    account.balance += totalRevenue - fee;
+    account.balance = new Decimal(account.balance).plus(totalRevenue).minus(fee).toFixed();
 
-    await FuturesPosition.deleteOne({ _id: positionId, userId }).session(
-      session,
-    );
+    await FuturesPosition.deleteOne({ _id: positionId, userId }).session(session);
 
     await account.save({ session });
 
@@ -283,7 +232,7 @@ export const adjustLeverage = async (req, res) => {
       throw new Error("Invalid leverage value");
     }
 
-    position.leverage = leverage;
+    position.leverage = new Decimal(leverage).toFixed();
     await position.save();
 
     res.status(200).json({ message: "Leverage updated successfully" });
