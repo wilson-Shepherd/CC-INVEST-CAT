@@ -3,16 +3,13 @@ import cron from "node-cron";
 import {
   getCurrentPrice,
   logError,
-  TRANSACTION_FEE_RATE,
-  MARGIN_RATE,
 } from "../utils/tradeUtils.js";
 import FuturesOrder from "../models/FuturesOrder.js";
 import SpotOrder from "../models/SpotOrder.js";
 import FuturesAccount from "../models/FuturesAccount.js";
 import SpotAccount from "../models/SpotAccount.js";
-import FuturesPosition from "../models/FuturesPosition.js";
 import { executeOrder as executeSpotOrder} from "../controllers/spotTrading.js";
-import { executeOrder as executeFuturesOrder ,calculateUserRiskRate } from "../controllers/futuresTrading.js";
+import { executeOrder as executeFuturesOrder } from "../controllers/futuresTrading.js";
 
 export const executePendingOrders = async (OrderModel, AccountModel, executeOrderFunction) => {
   try {
@@ -73,81 +70,10 @@ export const executePendingOrders = async (OrderModel, AccountModel, executeOrde
   }
 };
 
-export const monitorMargin = async () => {
-  const users = await FuturesAccount.find().lean();
-  for (const user of users) {
-    try {
-      const positions = await FuturesPosition.find({ userId: user.userId });
-      for (const position of positions) {
-        const currentPrice = await getCurrentPrice(position.symbol);
-        const totalCost =
-          (position.quantity * currentPrice) / position.leverage;
-        const margin = totalCost * MARGIN_RATE;
-        if (user.balance < margin) {
-          await forceClosePosition(position, user);
-        }
-      }
-    } catch (error) {
-      logError(error, "monitorMargin", { userId: user.userId });
-    }
-  }
-};
-
-const forceClosePosition = async (position, user) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const currentPrice = await getCurrentPrice(position.symbol);
-    const totalCost = (position.quantity * currentPrice) / position.leverage;
-    const fee = totalCost * TRANSACTION_FEE_RATE;
-
-    let totalRevenue;
-    if (position.positionType === "long") {
-      totalRevenue = totalCost - fee;
-    } else {
-      totalRevenue = totalCost + fee;
-    }
-
-    user.balance += totalRevenue;
-
-    await FuturesPosition.deleteOne({ _id: position._id }).session(session);
-    await FuturesAccount.updateOne(
-      { _id: user._id },
-      { balance: user.balance },
-    ).session(session);
-
-    await session.commitTransaction();
-    console.log(
-      `Forced close position: User ${position.userId}, Symbol ${position.symbol}, Quantity ${position.quantity}, Position Type ${position.positionType}, Current Price ${currentPrice}, Fee ${fee}`,
-    );
-  } catch (error) {
-    await session.abortTransaction();
-    logError(error, "forceClosePosition", { userId: position.userId });
-  } finally {
-    session.endSession();
-  }
-};
-
-export const monitorRiskRates = async () => {
-  const users = await FuturesAccount.find().lean();
-  for (const user of users) {
-    try {
-      const { riskRate, balance } = await calculateUserRiskRate(user.userId);
-      console.log(
-        `User ${user.userId} - Risk Rate: ${riskRate}, Balance: ${balance}`,
-      );
-    } catch (error) {
-      logError(error, "monitorRiskRates", { userId: user.userId });
-    }
-  }
-};
-
-cron.schedule("*/5 * * * *", () =>
+cron.schedule("*/1 * * * *", () =>
   executePendingOrders(FuturesOrder, FuturesAccount, executeFuturesOrder),
 );
+
 cron.schedule("*/1 * * * *", () =>
   executePendingOrders(SpotOrder, SpotAccount, executeSpotOrder),
 );
-cron.schedule("0 * * * *", () => monitorMargin());
-cron.schedule("0 * * * *", () => monitorRiskRates());

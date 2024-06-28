@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import Decimal from 'decimal.js';
 import SpotOrder from "../models/SpotOrder.js";
 import SpotAccount from "../models/SpotAccount.js";
 import {
@@ -9,7 +10,6 @@ import {
   getAvailableCryptosUtil,
   validateAccount,
 } from "../utils/tradeUtils.js";
-import Decimal from 'decimal.js';
 
 export const getSpotAccount = async (req, res) => {
   const { userId } = req.params;

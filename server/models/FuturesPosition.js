@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
@@ -7,44 +7,45 @@ const FuturesPositionSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: "User",
+      ref: 'User',
     },
     symbol: {
       type: String,
       required: true,
-      uppercase: true,
     },
     quantity: {
       type: Number,
       required: true,
-      min: 0,
     },
     entryPrice: {
       type: Number,
       required: true,
-      min: 0,
     },
     leverage: {
       type: Number,
       required: true,
-      min: 1,
     },
     positionType: {
       type: String,
-      enum: ["long", "short"],
       required: true,
+      enum: ['long', 'short'],
+    },
+    initialMargin: {
+      type: Number,
+      default: 0,
+    },
+    maintenanceMargin: {
+      type: Number,
+      default: 0,
     },
     createdAt: {
       type: Date,
       default: Date.now,
     },
   },
-  { versionKey: false },
+  { versionKey: false }
 );
 
-const FuturesPosition = mongoose.model(
-  "FuturesPosition",
-  FuturesPositionSchema,
-);
+const FuturesPosition = mongoose.model('FuturesPosition', FuturesPositionSchema);
 
 export default FuturesPosition;

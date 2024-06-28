@@ -8,9 +8,12 @@ const FuturesOrderDetail = ({ order }) => {
       <p><strong>Order Type:</strong> {order.orderType}</p>
       <p><strong>Quantity:</strong> {order.quantity}</p>
       <p><strong>Status:</strong> {order.status}</p>
-      <p><strong>Price:</strong> {order.price}</p>
+      {order.orderType.includes('limit') && <p><strong>Limit Price:</strong> {order.price}</p>}
+      {order.orderType.includes('market') && <p><strong>Executed at Market Price</strong></p>}
+      <p><strong>Leverage:</strong> {order.leverage}</p>
       <p><strong>Fee:</strong> {order.fee}</p>
       <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+      {order.executedAt && <p><strong>Executed At:</strong> {new Date(order.executedAt).toLocaleString()}</p>}
     </div>
   );
 };
@@ -21,9 +24,11 @@ FuturesOrderDetail.propTypes = {
     orderType: PropTypes.string.isRequired,
     quantity: PropTypes.number.isRequired,
     status: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired,
+    price: PropTypes.number,
+    leverage: PropTypes.number.isRequired,
     fee: PropTypes.number.isRequired,
     createdAt: PropTypes.string.isRequired,
+    executedAt: PropTypes.string,
   }).isRequired,
 };
 

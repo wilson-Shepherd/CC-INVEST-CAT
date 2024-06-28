@@ -1,107 +1,87 @@
 import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import axios from 'axios';
+import PropTypes from 'prop-types';
 
-const FuturesTradingForm = ({ userId, onSubmit }) => {
+const FuturesTradingForm = ({ userId }) => {
   const [symbol, setSymbol] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [orderType, setOrderType] = useState('buy-market');
+  const [orderType, setOrderType] = useState('market');
+  // eslint-disable-next-line no-unused-vars
   const [price, setPrice] = useState('');
   const [leverage, setLeverage] = useState(1);
-  const [availableCryptos, setAvailableCryptos] = useState([]);
+  const [symbols, setSymbols] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchAvailableCryptos = async () => {
+    const fetchSymbols = async () => {
       try {
         const response = await axios.get('http://localhost:3000/api/futuresTrading/availableCryptos');
-        setAvailableCryptos(response.data);
-      } catch (error) {
-        console.error('Error fetching available cryptos:', error);
+        setSymbols(response.data);
+      } catch (err) {
+        setError(err.message);
       }
     };
 
-    fetchAvailableCryptos();
+    fetchSymbols();
   }, []);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     try {
       const response = await axios.post(`http://localhost:3000/api/futuresTrading/users/${userId}/orders`, {
         symbol,
-        quantity: parseFloat(quantity),
+        quantity,
         orderType,
-        price: orderType.includes('limit') ? parseFloat(price) : undefined,
-        leverage: parseInt(leverage, 10),
+        leverage
       });
-      onSubmit(response.data);
-      setSymbol('');
-      setQuantity('');
-      setPrice('');
-      setLeverage(1);
-    } catch (error) {
-      console.error('Error placing order:', error);
+      console.log('Order created:', response.data);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Symbol:</label>
-        <select value={symbol} onChange={(e) => setSymbol(e.target.value)} required>
-          <option value="" disabled>Select a symbol</option>
-          {availableCryptos.map((crypto) => (
-            <option key={crypto} value={crypto}>{crypto}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label>Quantity:</label>
-        <input
-          type="number"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label>Order Type:</label>
-        <select value={orderType} onChange={(e) => setOrderType(e.target.value)}>
-          <option value="buy-market">Buy Market</option>
-          <option value="sell-market">Sell Market</option>
-          <option value="buy-limit">Buy Limit</option>
-          <option value="sell-limit">Sell Limit</option>
-        </select>
-      </div>
-      {orderType.includes('limit') && (
+    <div>
+      <h2>Place a Futures Order</h2>
+      <form onSubmit={handleSubmit}>
         <div>
-          <label>Price:</label>
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required={orderType.includes('limit')}
-          />
+          <label>Symbol:</label>
+          <select value={symbol} onChange={(e) => setSymbol(e.target.value)} required>
+            <option value="" disabled>Select a symbol</option>
+            {symbols.map((sym) => (
+              <option key={sym} value={sym}>{sym}</option>
+            ))}
+          </select>
         </div>
-      )}
-      <div>
-        <label>Leverage:</label>
-        <input
-          type="number"
-          value={leverage}
-          onChange={(e) => setLeverage(e.target.value)}
-          min="1"
-          required
-        />
-      </div>
-      <button type="submit">Place Order</button>
-    </form>
+        <div>
+          <label>Quantity:</label>
+          <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
+        </div>
+        <div>
+          <label>Order Type:</label>
+          <select value={orderType} onChange={(e) => setOrderType(e.target.value)} disabled>
+            <option value="market">Market</option>
+          </select>
+        </div>
+        <div>
+          <label>Leverage:</label>
+          <select value={leverage} onChange={(e) => setLeverage(e.target.value)}>
+            <option value={1}>1x</option>
+            <option value={3}>3x</option>
+            <option value={5}>5x</option>
+            <option value={10}>10x</option>
+          </select>
+        </div>
+        {error && <div>Error: {error}</div>}
+        <button type="submit">Place Order</button>
+      </form>
+    </div>
   );
 };
 
 FuturesTradingForm.propTypes = {
   userId: PropTypes.string.isRequired,
-  onSubmit: PropTypes.func.isRequired,
 };
 
 export default FuturesTradingForm;
