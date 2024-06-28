@@ -1,15 +1,20 @@
-import verifyJWT from '../utils/verifyJWT.js';
+import { verifyJWT } from "../utils/jwt.js";
 
-const auth = async (req, res, next) => {
-  const token = req.header('Authorization').replace('Bearer ', '');
+const authenticate = async (req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(401).send({ error: "Authorization token is missing." });
+  }
 
   try {
     const decoded = await verifyJWT(token);
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).send({ error: 'Please authenticate.' });
+    console.error("Authentication error:", err);
+    res.status(401).send({ error: "Please authenticate." });
   }
 };
 
-export default auth;
+export default authenticate;

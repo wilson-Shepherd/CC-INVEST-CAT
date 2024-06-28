@@ -1,30 +1,35 @@
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import LiveData from './pages/LiveData';
-import HistoricalData from './pages/HistoricalData';
+import Kline from './pages/Kline';
+import SpotTrading from './pages/SpotTrading';
+import FuturesTrading from './pages/FuturesTrading';
+import Admin from './pages/Admin';
+import Header from './components/Header';
+import PrivateRoute from './components/PrivateRoute';
+import RedirectRoute from './components/RedirectRoute';
+import { AuthProvider } from './contexts/AuthContext';
+import './App.css';
 
 const App = () => {
   return (
-    <Router>
-      <nav>
-        <ul>
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/register">Register</Link></li>
-          <li><Link to="/login">Login</Link></li>
-          <li><Link to="/live-data">Live Data</Link></li>
-          <li><Link to="/historical-data">Historical Data</Link></li>
-        </ul>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/live-data" element={<LiveData />} />
-        <Route path="/historical-data" element={<HistoricalData />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/register" element={<RedirectRoute><Register /></RedirectRoute>} />
+          <Route path="/login" element={<RedirectRoute><Login /></RedirectRoute>} />
+          <Route path="/spot-trading" element={<PrivateRoute><SpotTrading /></PrivateRoute>} />
+          <Route path="/futures-trading" element={<PrivateRoute><FuturesTrading /></PrivateRoute>} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/live-data" element={<LiveData />} />
+          <Route path="/kline" element={<Kline />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 
