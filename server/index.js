@@ -7,6 +7,7 @@ import userRoutes from "./routes/user.js";
 // import notificationRoutes from "./routes/dcNotification.js";
 import spotTradingRoutes from "./routes/spotTrading.js";
 import futuresTradingRoutes from "./routes/futuresTrading.js";
+import adminRoutes from './routes/admin.js';
 import { errorHandler } from "./utils/errorHandler.js";
 // import dcClient from "./services/discordBot/app.js";
 // import "./services/trading/bot.js"
@@ -30,6 +31,7 @@ app.use("/api/users", userRoutes);
 // app.use("/api/notifications", notificationRoutes);
 app.use("/api/spotTrading", spotTradingRoutes);
 app.use("/api/futuresTrading", futuresTradingRoutes);
+app.use('/api/admin', adminRoutes);
 
 // if (dcClient) {
 //   console.log("Discord client initialized");

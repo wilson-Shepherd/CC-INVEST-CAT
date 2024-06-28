@@ -1,6 +1,6 @@
 import { verifyJWT } from "../utils/jwt.js";
 
-const auth = async (req, res, next) => {
+const authenticate = async (req, res, next) => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
 
   if (!token) {
@@ -17,4 +17,4 @@ const auth = async (req, res, next) => {
   }
 };
 
-export default auth;
+export default authenticate;
