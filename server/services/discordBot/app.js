@@ -1,48 +1,53 @@
-// import { Client, GatewayIntentBits } from 'discord.js';
-// import 'dotenv/config';
-// import { getLatestPrices } from './webSocketClient.js';
-// import { sendNotification } from './bot.js';
+import { Client, GatewayIntentBits } from "discord.js";
+import "dotenv/config";
+import cron from "node-cron";
+import { getLatestPrices } from "./webSocketClient.js";
+import { sendNotification } from "./bot.js";
 
-// const dcClient = new Client({ intents: [GatewayIntentBits.Guilds] });
+const dcClient = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// dcClient.on('ready', () => {
-//   console.log(`Logged in as ${dcClient.user.tag}!`);
+dcClient.on("ready", () => {
+  console.log(`Logged in as ${dcClient.user.tag}!`);
 
-//   setInterval(async () => {
-//     try {
-//       const prices = await getLatestPrices();
-//       const messages = [
-//         { symbol: 'BTCUSDT', data: prices['btcusdt'] },
-//         { symbol: 'BNBUSDT', data: prices['bnbusdt'] },
-//         { symbol: 'ETHUSDT', data: prices['ethusdt'] }
-//       ];
+  const scheduleNotification = async () => {
+    try {
+      const prices = getLatestPrices();
+      const filteredPrices = Object.entries(prices).filter(
+        ([symbol, data]) =>
+          data.volume > 1_000_000_000 && data.priceChangePercent > 10,
+      );
 
-//       for (const { symbol, data } of messages) {
-//         if (data) {
-//           const message = `
-//             ${symbol} 市場資訊:
-//             最後價格: ${data.lastPrice}
-//             24h 變動百分比: ${data.priceChangePercent}%
-//             成交量: ${data.volume}
-//           `;
-//           const channelId = process.env.DISCORD_CHANNEL_ID;
-//           await sendNotification(channelId, message);
-//         }
-//       }
-//     } catch (error) {
-//       console.error('Error fetching prices or sending notifications:', error);
-//     }
-//   }, 60 * 60 * 1000 * 1000);
-// });
+      if (filteredPrices.length > 0) {
+        let message = "現在熱門貨幣為我系統篩選出來的這些加密貨幣:\n";
+        for (const [symbol, data] of filteredPrices) {
+          message += `
+            ${symbol.toUpperCase()} 市場資訊:
+            最後價格: ${data.lastPrice}
+            24h 變動百分比: ${data.priceChangePercent}%
+            成交量: ${data.volume}
+          `;
+        }
+        const channelId = process.env.DISCORD_CHANNEL_ID;
+        await sendNotification(channelId, message);
+      } else {
+        console.log("No hot cryptocurrencies found at this time.");
+      }
+    } catch (error) {
+      console.error("Error fetching prices or sending notifications:", error);
+    }
+  };
 
-// dcClient.on('interactionCreate', async interaction => {
-//   if (!interaction.isChatInputCommand()) return;
+  cron.schedule("0 6,12,18,0 * * *", scheduleNotification);
+});
 
-//   if (interaction.commandName === 'ping') {
-//     await interaction.reply('Pong!');
-//   }
-// });
+dcClient.on("interactionCreate", async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
 
-// dcClient.login(process.env.TOKEN);
+  if (interaction.commandName === "ping") {
+    await interaction.reply("Pong!");
+  }
+});
 
-// export default dcClient;
+dcClient.login(process.env.TOKEN);
+
+export default dcClient;

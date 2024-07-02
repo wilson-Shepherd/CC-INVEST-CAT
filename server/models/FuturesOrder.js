@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
@@ -7,7 +7,7 @@ const FuturesOrderSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: 'User',
+      ref: "User",
     },
     symbol: {
       type: String,
@@ -20,12 +20,12 @@ const FuturesOrderSchema = new Schema(
     orderType: {
       type: String,
       required: true,
-      enum: ['buy-market', 'sell-market', 'buy-limit', 'sell-limit'],
+      enum: ["buy-market", "sell-market", "buy-limit", "sell-limit"],
     },
     price: {
       type: Number,
       required: function () {
-        return this.orderType.includes('limit');
+        return this.orderType.includes("limit");
       },
     },
     leverage: {
@@ -39,8 +39,8 @@ const FuturesOrderSchema = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'completed', 'cancelled'],
-      default: 'pending',
+      enum: ["pending", "completed", "cancelled"],
+      default: "pending",
     },
     createdAt: {
       type: Date,
@@ -50,9 +50,9 @@ const FuturesOrderSchema = new Schema(
       type: Date,
     },
   },
-  { versionKey: false }
+  { versionKey: false },
 );
 
-const FuturesOrder = mongoose.model('FuturesOrder', FuturesOrderSchema);
+const FuturesOrder = mongoose.model("FuturesOrder", FuturesOrderSchema);
 
 export default FuturesOrder;

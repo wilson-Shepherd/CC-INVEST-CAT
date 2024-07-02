@@ -1,4 +1,3 @@
-import binanceClient from "../binance/client.js";
 import {
   createGrid,
   executeTrade,
@@ -6,9 +5,6 @@ import {
   getBTCUSDPrice,
 } from "../../utils/botUtils.js";
 
-const client = binanceClient(true);
-
-const symbol = "BTCUSDT";
 const interval = 15 * 60 * 1000;
 const lowerPrice = 60000;
 const upperPrice = 70000;
@@ -20,7 +16,11 @@ const tradeCooldown = 15 * 60 * 1000;
 
 const lastTradePrices = new Map();
 
+let isTradingActive = false;
+
 async function checkPriceAndTrade() {
+  if (!isTradingActive) return;
+
   const grid = createGrid(lowerPrice, upperPrice, gridSize);
 
   try {
@@ -89,7 +89,9 @@ async function checkPriceAndTrade() {
         const proceeds = quantity * btcPriceInUSD;
 
         if (BTC < quantity) {
-          console.log(`Insufficient position to sell at price ${btcPriceInUSD}`);
+          console.log(
+            `Insufficient position to sell at price ${btcPriceInUSD}`,
+          );
           return;
         }
 
@@ -118,5 +120,19 @@ async function checkPriceAndTrade() {
   }
 }
 
-setInterval(checkPriceAndTrade, interval);
-checkPriceAndTrade();
+let intervalId;
+
+export const startTrading = () => {
+  if (!isTradingActive) {
+    isTradingActive = true;
+    intervalId = setInterval(checkPriceAndTrade, interval);
+    checkPriceAndTrade();
+  }
+};
+
+export const stopTrading = () => {
+  if (isTradingActive) {
+    isTradingActive = false;
+    clearInterval(intervalId);
+  }
+};

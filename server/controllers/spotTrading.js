@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import Decimal from 'decimal.js';
+import mongoose from "mongoose";
+import Decimal from "decimal.js";
 import SpotOrder from "../models/SpotOrder.js";
 import SpotAccount from "../models/SpotAccount.js";
 import {
@@ -25,7 +25,9 @@ export const getSpotAccount = async (req, res) => {
     res.status(200).json({ balance: account.balance, holdings });
   } catch (error) {
     logError(error, "getSpotAccount");
-    res.status(500).json({ error: "An error occurred while retrieving the account" });
+    res
+      .status(500)
+      .json({ error: "An error occurred while retrieving the account" });
   }
 };
 
@@ -33,9 +35,28 @@ export const createSpotOrder = async (req, res) => {
   const { symbol, quantity, orderType, price: limitPrice } = req.body;
   const { userId } = req.params;
 
-  if (isNaN(quantity) || new Decimal(quantity).lessThanOrEqualTo(0) || 
-      (orderType.includes("limit") && (isNaN(limitPrice) || new Decimal(limitPrice).lessThanOrEqualTo(0)))) {
-    return res.status(400).json({ message: "Invalid price or quantity" });
+  if (!symbol || !quantity || !orderType) {
+    return res.status(400).json({ message: "Missing required parameters" });
+  }
+
+  if (
+    quantity === null ||
+    quantity === undefined ||
+    isNaN(quantity) ||
+    new Decimal(quantity).lessThanOrEqualTo(0)
+  ) {
+    return res.status(400).json({ message: "Invalid quantity" });
+  }
+
+  if (orderType.includes("limit")) {
+    if (
+      limitPrice === null ||
+      limitPrice === undefined ||
+      isNaN(limitPrice) ||
+      new Decimal(limitPrice).lessThanOrEqualTo(0)
+    ) {
+      return res.status(400).json({ message: "Invalid limit price" });
+    }
   }
 
   const session = await mongoose.startSession();
@@ -47,9 +68,18 @@ export const createSpotOrder = async (req, res) => {
 
     const currentPrice = new Decimal(await getCurrentPrice(symbol));
 
-    if (orderType.includes("limit") && currentPrice.minus(limitPrice).abs().dividedBy(limitPrice).greaterThan(PRICE_TOLERANCE)) {
+    if (
+      orderType.includes("limit") &&
+      currentPrice
+        .minus(limitPrice)
+        .abs()
+        .dividedBy(limitPrice)
+        .greaterThan(PRICE_TOLERANCE)
+    ) {
       await session.abortTransaction();
-      return res.status(400).json({ message: "Price is out of allowable range, please try again" });
+      return res
+        .status(400)
+        .json({ message: "Price is out of allowable range, please try again" });
     }
 
     const orderData = {
@@ -57,16 +87,17 @@ export const createSpotOrder = async (req, res) => {
       symbol,
       quantity: new Decimal(quantity).toFixed(),
       orderType,
-      price: orderType.includes("limit") ? new Decimal(limitPrice).toFixed() : undefined,
+      price: orderType.includes("limit")
+        ? new Decimal(limitPrice).toFixed()
+        : undefined,
       fee: 0,
       status: "pending",
       createdAt: new Date(),
     };
 
-    let newOrder = await SpotOrder.create([orderData], { session });
+    const newOrder = await SpotOrder.create([orderData], { session });
 
     if (orderType.includes("market")) {
-      console.log("Creating market order with current price:", currentPrice.toString());
       await executeOrder(newOrder[0], account, currentPrice, session);
     }
 
@@ -82,7 +113,9 @@ export const createSpotOrder = async (req, res) => {
 };
 
 export const executeOrder = async (order, account, currentPrice, session) => {
-  const totalAmount = new Decimal(order.quantity).times(new Decimal(currentPrice || order.entryPrice || order.exitPrice));
+  const totalAmount = new Decimal(order.quantity).times(
+    new Decimal(currentPrice || order.entryPrice || order.exitPrice),
+  );
   const fee = totalAmount.times(TRANSACTION_FEE_RATE);
 
   try {
@@ -90,16 +123,31 @@ export const executeOrder = async (order, account, currentPrice, session) => {
       if (new Decimal(account.balance).lessThan(totalAmount.plus(fee))) {
         throw new Error("Insufficient funds");
       }
-      account.balance = new Decimal(account.balance).minus(totalAmount.plus(fee)).toFixed();
-      account.holdings.set(order.symbol, new Decimal(account.holdings.get(order.symbol) || 0).plus(order.quantity).toFixed());
+      account.balance = new Decimal(account.balance)
+        .minus(totalAmount.plus(fee))
+        .toFixed();
+      account.holdings.set(
+        order.symbol,
+        new Decimal(account.holdings.get(order.symbol) || 0)
+          .plus(order.quantity)
+          .toFixed(),
+      );
       order.entryPrice = order.entryPrice || currentPrice;
     } else if (order.orderType.startsWith("sell")) {
-      if (!account.holdings.has(order.symbol) || new Decimal(account.holdings.get(order.symbol)).lessThan(order.quantity)) {
+      if (
+        !account.holdings.has(order.symbol) ||
+        new Decimal(account.holdings.get(order.symbol)).lessThan(order.quantity)
+      ) {
         throw new Error("Insufficient assets");
       }
       const netRevenue = totalAmount.minus(fee);
       account.balance = new Decimal(account.balance).plus(netRevenue).toFixed();
-      account.holdings.set(order.symbol, new Decimal(account.holdings.get(order.symbol)).minus(order.quantity).toFixed());
+      account.holdings.set(
+        order.symbol,
+        new Decimal(account.holdings.get(order.symbol))
+          .minus(order.quantity)
+          .toFixed(),
+      );
       order.exitPrice = order.exitPrice || currentPrice;
       if (new Decimal(account.holdings.get(order.symbol)).equals(0)) {
         account.holdings.delete(order.symbol);
@@ -112,8 +160,6 @@ export const executeOrder = async (order, account, currentPrice, session) => {
     order.fee = fee.toFixed();
     order.executedAt = new Date();
     await order.save({ session });
-
-    console.log(`Order executed: User ${order.userId}, Symbol ${order.symbol}, Quantity ${order.quantity}, Order Type ${order.orderType}, Entry Price ${order.entryPrice}, Exit Price ${order.exitPrice}, Fee ${order.fee}, Executed At ${order.executedAt}`);
   } catch (error) {
     logError(error, "executeOrder");
     throw error;

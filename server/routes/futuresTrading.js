@@ -8,7 +8,7 @@ import {
   getPositions,
   closePosition,
   adjustLeverage,
-  checkRiskRate
+  checkRiskRate,
 } from "../controllers/futuresTrading.js";
 import authenticate from "../middlewares/authenticate.js";
 
@@ -23,12 +23,12 @@ router.get("/users/:userId/positions", authenticate, getPositions);
 router.post(
   "/users/:userId/positions/:positionId/close",
   authenticate,
-  closePosition
+  closePosition,
 );
 router.post(
   "/users/:userId/positions/:positionId/leverage",
   authenticate,
-  adjustLeverage
+  adjustLeverage,
 );
 router.get("/users/:userId/riskRate", authenticate, checkRiskRate);
 

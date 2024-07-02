@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
@@ -8,7 +8,7 @@ const FuturesAccountSchema = new Schema(
       type: Schema.Types.ObjectId,
       required: true,
       unique: true,
-      ref: 'User',
+      ref: "User",
     },
     balance: {
       type: Number,
@@ -23,7 +23,7 @@ const FuturesAccountSchema = new Schema(
     positions: [
       {
         type: Schema.Types.ObjectId,
-        ref: 'FuturesPosition',
+        ref: "FuturesPosition",
       },
     ],
     createdAt: {
@@ -31,9 +31,9 @@ const FuturesAccountSchema = new Schema(
       default: Date.now,
     },
   },
-  { versionKey: false }
+  { versionKey: false },
 );
 
-const FuturesAccount = mongoose.model('FuturesAccount', FuturesAccountSchema);
+const FuturesAccount = mongoose.model("FuturesAccount", FuturesAccountSchema);
 
 export default FuturesAccount;

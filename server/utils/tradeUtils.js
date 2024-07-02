@@ -7,7 +7,7 @@ export const INITIAL_MARGIN_RATIOS = {
   1: 1,
   3: 0.3333,
   5: 0.2,
-  10: 0.1
+  10: 0.1,
 };
 export const MAINTENANCE_MARGIN_RATIO = 0.5;
 export const FINANCING_RATE = 0.01;
@@ -16,7 +16,11 @@ export const RISK_FACTOR = 1.5;
 export const LIQUIDATION_THRESHOLD = 0.8;
 
 export const logError = (error, context, details) => {
-  console.error(`[${new Date().toISOString()}] Error in ${context}:`, error, details);
+  console.error(
+    `[${new Date().toISOString()}] Error in ${context}:`,
+    error,
+    details,
+  );
 };
 
 export const validateAmount = (amount) => {
@@ -66,7 +70,9 @@ export const getAvailableCryptosUtil = async () => {
 };
 
 export const calculateInitialMargin = (totalAmount, leverage) => {
-  return totalAmount.times(INITIAL_MARGIN_RATIOS[leverage] || INITIAL_MARGIN_RATIOS[MAX_LEVERAGE]);
+  return totalAmount.times(
+    INITIAL_MARGIN_RATIOS[leverage] || INITIAL_MARGIN_RATIOS[MAX_LEVERAGE],
+  );
 };
 
 export const calculateMaintenanceMargin = (initialMargin) => {

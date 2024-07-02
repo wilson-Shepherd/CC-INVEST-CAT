@@ -11,8 +11,7 @@ const authenticate = async (req, res, next) => {
     const decoded = await verifyJWT(token);
     req.user = decoded;
     next();
-  } catch (err) {
-    console.error("Authentication error:", err);
+  } catch (error) {
     res.status(401).send({ error: "Please authenticate." });
   }
 };
