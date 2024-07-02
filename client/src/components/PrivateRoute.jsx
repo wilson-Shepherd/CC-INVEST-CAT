@@ -1,12 +1,13 @@
-import { useContext, useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
-import PropTypes from 'prop-types';
+import { useContext, useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../contexts/AuthContext";
+import PropTypes from "prop-types";
+import { Box, Typography, CircularProgress, Container } from "@mui/material";
 
 const PrivateRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     if (!user) {
@@ -29,9 +30,25 @@ const PrivateRoute = ({ children }) => {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
     return (
-      <div>
-        <p>Please log in to access this page. You will be redirected to the login page in {countdown} seconds.</p>
-      </div>
+      <Container maxWidth="sm">
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+          }}
+        >
+          <CircularProgress />
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            請登入以訪問此頁面。
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 1 }}>
+            您將在 {countdown} 秒後被重定向到登入頁面。
+          </Typography>
+        </Box>
+      </Container>
     );
   }
 

@@ -1,10 +1,19 @@
-import { useEffect, useState, useContext } from 'react';
-import axios from 'axios';
-import { AuthContext } from '../contexts/AuthContext';
-import SpotAccountInfo from '../components/spot/SpotAccountInfo';
-import SpotTradingForm from '../components/spot/SpotTradingForm';
-import SpotOrdersList from '../components/spot/SpotOrdersList';
-import SpotOrderDetail from '../components/spot/SpotOrderDetail';
+import { useEffect, useState, useContext } from "react";
+import axios from "axios";
+import { AuthContext } from "../contexts/AuthContext";
+import SpotAccountInfo from "../components/spot/SpotAccountInfo";
+import SpotTradingForm from "../components/spot/SpotTradingForm";
+import SpotOrdersList from "../components/spot/SpotOrdersList";
+import SpotOrderDetail from "../components/spot/SpotOrderDetail";
+import KlineChart from "../components/KLineChart";
+import {
+  Box,
+  CircularProgress,
+  Container,
+  Typography,
+  Grid,
+} from "@mui/material";
+import tradingBanner from "../assets/trading_banner.png";
 
 const SpotTrading = () => {
   const { user } = useContext(AuthContext);
@@ -21,43 +30,80 @@ const SpotTrading = () => {
 
   const fetchAccountData = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/spotTrading/users/${user._id}/account`);
+      const response = await axios.get(
+        `http://localhost:3000/api/spotTrading/users/${user._id}/account`,
+      );
       setAccount(response.data);
     } catch (error) {
-      console.error('Error fetching account data:', error);
+      console.error("Error fetching account data:", error);
     }
   };
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/spotTrading/users/${user._id}/orders`);
+      const response = await axios.get(
+        `http://localhost:3000/api/spotTrading/users/${user._id}/orders`,
+      );
       setOrders(response.data);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
     }
   };
 
   const handleOrderSubmit = (newOrder) => {
-    console.log('New order placed:', newOrder);
+    console.log("New order placed:", newOrder);
     fetchAccountData();
     fetchOrders();
   };
 
   if (!user) {
-    return <div>Please log in to view your spot account.</div>;
+    return (
+      <Typography variant="h6" align="center">
+        請先登入
+      </Typography>
+    );
   }
 
   if (!account) {
-    return <div>Loading...</div>;
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
-    <div>
-      <SpotAccountInfo account={account} />
-      <SpotTradingForm userId={user._id} onSubmit={handleOrderSubmit} />
+    <Container maxWidth="lg">
+      <Box
+        sx={{ textAlign: "center", marginTop: "1rem", marginBottom: "3rem" }}
+      >
+        <img
+          src={tradingBanner}
+          alt="Trading Banner"
+          style={{ width: "100%", maxHeight: "100%", objectFit: "cover" }}
+        />
+      </Box>
+      <KlineChart />
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <SpotAccountInfo account={account} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <SpotTradingForm
+            userId={user._id}
+            account={account}
+            onSubmit={handleOrderSubmit}
+          />
+        </Grid>
+      </Grid>
       <SpotOrdersList orders={orders} onOrderClick={setSelectedOrder} />
       {selectedOrder && <SpotOrderDetail order={selectedOrder} />}
-    </div>
+    </Container>
   );
 };
 

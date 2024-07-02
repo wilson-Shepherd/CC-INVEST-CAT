@@ -1,35 +1,35 @@
-// import WebSocket from "ws";
-// import "dotenv/config";
+import WebSocket from "ws";
+import "dotenv/config";
 
-// const symbols = ["btcusdt", "bnbusdt", "ethusdt"];
-// const streams = symbols.map((symbol) => `${symbol}@ticker`).join("/");
-// const ws = new WebSocket(
-//   `wss://stream.binance.com:9443/stream?streams=${streams}`,
-// );
+const ws = new WebSocket(`wss://stream.binance.com:9443/ws/!ticker@arr`);
 
-// const latestPrices = {};
+const latestPrices = {};
 
-// ws.on("message", (data) => {
-//   const message = JSON.parse(data);
-//   const {
-//     s: symbol,
-//     c: lastPrice,
-//     P: priceChangePercent,
-//     v: volume,
-//   } = message.data;
-//   latestPrices[symbol.toLowerCase()] = {
-//     lastPrice,
-//     priceChangePercent,
-//     volume,
-//   };
-// });
+ws.on("message", (data) => {
+  const messages = JSON.parse(data);
 
-// ws.on("error", (error) => {
-//   console.error("WebSocket error:", error);
-// });
+  messages.forEach((message) => {
+    const {
+      s: symbol,
+      c: lastPrice,
+      P: priceChangePercent,
+      v: volume,
+    } = message;
 
-// ws.on("close", () => {
-//   console.warn("WebSocket connection closed");
-// });
+    latestPrices[symbol.toLowerCase()] = {
+      lastPrice,
+      priceChangePercent: parseFloat(priceChangePercent),
+      volume: parseFloat(volume),
+    };
+  });
+});
 
-// export const getLatestPrices = () => latestPrices;
+ws.on("error", (error) => {
+  console.error("WebSocket error:", error);
+});
+
+ws.on("close", () => {
+  console.warn("WebSocket connection closed");
+});
+
+export const getLatestPrices = () => latestPrices;

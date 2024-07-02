@@ -14,14 +14,12 @@ export const runBacktest = async (
   gridSize,
 ) => {
   try {
-    console.log("Fetching historical data...");
     const historicalData = await scraper.getHistoricalData(
       symbol,
       interval,
       startTime,
       endTime,
     );
-    console.log("Historical data fetched:", historicalData.length, "entries");
 
     historicalData.slice(0, 5).forEach((data) => {
       console.log("Sample data point:", data);

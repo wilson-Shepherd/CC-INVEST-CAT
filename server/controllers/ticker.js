@@ -34,6 +34,7 @@ export const fetchHistoricalData = async (req, res) => {
     };
     res.json(formattedData);
   } catch (error) {
+    console.error("Error fetching historical data:", error);
     res.status(500).json({ error: "Failed to fetch historical data" });
   }
 };
@@ -60,6 +61,7 @@ export const runStrategyBacktest = async (req, res) => {
     );
     res.json(balanceHistory);
   } catch (error) {
+    console.error("Error running backtest:", error);
     res.status(500).json({ error: "Failed to run backtest" });
   }
 };
@@ -82,7 +84,7 @@ export const fetchKlines = async (req, res) => {
     );
     res.json(data);
   } catch (error) {
-    console.error("Error fetching Klines:", error.message);
+    console.error("Error fetching Klines:", error);
     res.status(500).json({ error: "Failed to fetch Klines" });
   }
 };

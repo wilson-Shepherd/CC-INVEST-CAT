@@ -13,13 +13,15 @@ import {
   LIQUIDATION_THRESHOLD,
   getAvailableCryptosUtil,
   calculateInitialMargin,
-  calculateMaintenanceMargin
+  calculateMaintenanceMargin,
 } from "../utils/tradeUtils.js";
 
 export const getFuturesAccount = async (req, res) => {
   const { userId } = req.params;
   try {
-    const account = await FuturesAccount.findOne({ userId }).lean().populate('positions');
+    const account = await FuturesAccount.findOne({ userId })
+      .lean()
+      .populate("positions");
     if (!account) throw new Error("Account not found");
 
     res.status(200).json(account);
@@ -36,11 +38,17 @@ export const createFuturesOrder = async (req, res) => {
   const allowedLeverages = Object.keys(INITIAL_MARGIN_RATIOS).map(Number);
 
   if (!allowedLeverages.includes(leverage)) {
-    return res.status(400).json({ message: `Invalid leverage. Allowed values are ${allowedLeverages.join(', ')}.` });
+    return res.status(400).json({
+      message: `Invalid leverage. Allowed values are ${allowedLeverages.join(", ")}.`,
+    });
   }
 
-  if (isNaN(quantity) || new Decimal(quantity).lessThanOrEqualTo(0) ||
-      (orderType.includes("limit") && (isNaN(limitPrice) || new Decimal(limitPrice).lessThanOrEqualTo(0)))) {
+  if (
+    isNaN(quantity) ||
+    new Decimal(quantity).lessThanOrEqualTo(0) ||
+    (orderType.includes("limit") &&
+      (isNaN(limitPrice) || new Decimal(limitPrice).lessThanOrEqualTo(0)))
+  ) {
     return res.status(400).json({ message: "Invalid price or quantity" });
   }
 
@@ -53,9 +61,18 @@ export const createFuturesOrder = async (req, res) => {
 
     const currentPrice = new Decimal(await getCurrentPrice(symbol));
 
-    if (orderType.includes("limit") && currentPrice.minus(limitPrice).abs().dividedBy(limitPrice).greaterThan(PRICE_TOLERANCE)) {
+    if (
+      orderType.includes("limit") &&
+      currentPrice
+        .minus(limitPrice)
+        .abs()
+        .dividedBy(limitPrice)
+        .greaterThan(PRICE_TOLERANCE)
+    ) {
       await session.abortTransaction();
-      return res.status(400).json({ message: "Price is out of allowable range, please try again" });
+      return res
+        .status(400)
+        .json({ message: "Price is out of allowable range, please try again" });
     }
 
     const totalAmount = new Decimal(quantity).times(currentPrice);
@@ -67,17 +84,26 @@ export const createFuturesOrder = async (req, res) => {
       symbol,
       quantity: new Decimal(quantity).toFixed(),
       orderType,
-      price: orderType.includes("limit") ? new Decimal(limitPrice).toFixed() : undefined,
+      price: orderType.includes("limit")
+        ? new Decimal(limitPrice).toFixed()
+        : undefined,
       leverage,
       fee: 0,
       status: "pending",
       createdAt: new Date(),
     };
 
-    let newOrder = await FuturesOrder.create([orderData], { session });
+    const newOrder = await FuturesOrder.create([orderData], { session });
 
     if (orderType.includes("market")) {
-      await executeOrder(newOrder[0], account, currentPrice, initialMargin, maintenanceMargin, session);
+      await executeOrder(
+        newOrder[0],
+        account,
+        currentPrice,
+        initialMargin,
+        maintenanceMargin,
+        session,
+      );
     }
 
     await session.commitTransaction();
@@ -91,7 +117,14 @@ export const createFuturesOrder = async (req, res) => {
   }
 };
 
-export const executeOrder = async (order, account, currentPrice, initialMargin, maintenanceMargin, session) => {
+export const executeOrder = async (
+  order,
+  account,
+  currentPrice,
+  initialMargin,
+  maintenanceMargin,
+  session,
+) => {
   const totalAmount = new Decimal(order.quantity).times(currentPrice);
   const fee = totalAmount.times(TRANSACTION_FEE_RATE).times(order.leverage);
 
@@ -104,8 +137,12 @@ export const executeOrder = async (order, account, currentPrice, initialMargin, 
       if (new Decimal(account.balance).lessThan(initialMargin.plus(fee))) {
         throw new Error("Insufficient funds");
       }
-      account.balance = new Decimal(account.balance).minus(initialMargin.plus(fee)).toFixed();
-      account.usedMargin = new Decimal(account.usedMargin).plus(initialMargin).toFixed();
+      account.balance = new Decimal(account.balance)
+        .minus(initialMargin.plus(fee))
+        .toFixed();
+      account.usedMargin = new Decimal(account.usedMargin)
+        .plus(initialMargin)
+        .toFixed();
       const newPosition = {
         userId: order.userId,
         symbol: order.symbol,
@@ -115,22 +152,32 @@ export const executeOrder = async (order, account, currentPrice, initialMargin, 
         positionType: "long",
         initialMargin: initialMargin.toFixed(),
         maintenanceMargin: maintenanceMargin.toFixed(),
-        createdAt: new Date()
+        createdAt: new Date(),
       };
       const position = new FuturesPosition(newPosition);
       account.positions.push(position._id);
       await position.save({ session });
       order.entryPrice = currentPrice.toFixed();
-    } else if (order.orderType === "sell-market" || order.orderType === "sell-limit") {
-      let position = await FuturesPosition.findOne({ userId: order.userId, symbol: order.symbol }).session(session);
+    } else if (
+      order.orderType === "sell-market" ||
+      order.orderType === "sell-limit"
+    ) {
+      let position = await FuturesPosition.findOne({
+        userId: order.userId,
+        symbol: order.symbol,
+      }).session(session);
       const isExistingPosition = !!position;
 
       if (!isExistingPosition) {
         if (new Decimal(account.balance).lessThan(initialMargin.plus(fee))) {
           throw new Error("Insufficient funds to open short position");
         }
-        account.balance = new Decimal(account.balance).minus(initialMargin.plus(fee)).toFixed();
-        account.usedMargin = new Decimal(account.usedMargin).plus(initialMargin).toFixed();
+        account.balance = new Decimal(account.balance)
+          .minus(initialMargin.plus(fee))
+          .toFixed();
+        account.usedMargin = new Decimal(account.usedMargin)
+          .plus(initialMargin)
+          .toFixed();
         position = new FuturesPosition({
           userId: order.userId,
           symbol: order.symbol,
@@ -140,7 +187,7 @@ export const executeOrder = async (order, account, currentPrice, initialMargin, 
           positionType: "short",
           initialMargin: initialMargin.toFixed(),
           maintenanceMargin: maintenanceMargin.toFixed(),
-          createdAt: new Date()
+          createdAt: new Date(),
         });
         account.positions.push(position._id);
         await position.save({ session });
@@ -149,14 +196,20 @@ export const executeOrder = async (order, account, currentPrice, initialMargin, 
           throw new Error("Insufficient assets to close position");
         }
         const netRevenue = totalAmount.minus(fee);
-        account.balance = new Decimal(account.balance).plus(netRevenue).toFixed();
+        account.balance = new Decimal(account.balance)
+          .plus(netRevenue)
+          .toFixed();
         order.exitPrice = currentPrice.toFixed();
         if (new Decimal(position.quantity).equals(order.quantity)) {
           await position.remove({ session });
           account.positions.pull(position._id);
-          account.usedMargin = new Decimal(account.usedMargin).minus(position.initialMargin).toFixed();
+          account.usedMargin = new Decimal(account.usedMargin)
+            .minus(position.initialMargin)
+            .toFixed();
         } else {
-          position.quantity = new Decimal(position.quantity).minus(order.quantity).toFixed();
+          position.quantity = new Decimal(position.quantity)
+            .minus(order.quantity)
+            .toFixed();
           await position.save({ session });
         }
       }
@@ -168,8 +221,6 @@ export const executeOrder = async (order, account, currentPrice, initialMargin, 
     order.fee = fee.toFixed();
     order.executedAt = new Date();
     await order.save({ session });
-
-    console.log(`Order executed: User ${order.userId}, Symbol ${order.symbol}, Quantity ${order.quantity}, Order Type ${order.orderType}, Entry Price ${order.entryPrice}, Exit Price ${order.exitPrice}, Fee ${order.fee}, Executed At ${order.executedAt}`);
   } catch (error) {
     logError(error, "executeOrder");
     throw error;
@@ -206,14 +257,16 @@ export const getPositions = async (req, res) => {
 
     const positionsWithCurrentPrice = await Promise.all(
       positions.map(async (position) => {
-        const currentPrice = new Decimal(await getCurrentPrice(position.symbol));
+        const currentPrice = new Decimal(
+          await getCurrentPrice(position.symbol),
+        );
         const unrealizedPnL = calculateUnrealizedPnL(position, currentPrice);
         return {
           ...position,
           currentPrice: currentPrice.toFixed(),
-          unrealizedPnL: new Decimal(unrealizedPnL).toFixed()
+          unrealizedPnL: new Decimal(unrealizedPnL).toFixed(),
         };
-      })
+      }),
     );
 
     res.status(200).json(positionsWithCurrentPrice);
@@ -224,13 +277,24 @@ export const getPositions = async (req, res) => {
 };
 
 const calculateUnrealizedPnL = (position, currentPrice) => {
-  const entryFee = new Decimal(position.entryPrice).times(position.quantity).times(position.leverage).times(TRANSACTION_FEE_RATE);
+  const entryFee = new Decimal(position.entryPrice)
+    .times(position.quantity)
+    .times(position.leverage)
+    .times(TRANSACTION_FEE_RATE);
 
   let unrealizedPnL;
   if (position.positionType === "long") {
-    unrealizedPnL = new Decimal(currentPrice).minus(position.entryPrice).times(position.quantity).times(position.leverage).minus(entryFee);
+    unrealizedPnL = new Decimal(currentPrice)
+      .minus(position.entryPrice)
+      .times(position.quantity)
+      .times(position.leverage)
+      .minus(entryFee);
   } else if (position.positionType === "short") {
-    unrealizedPnL = new Decimal(position.entryPrice).minus(currentPrice).times(position.quantity).times(position.leverage).minus(entryFee);
+    unrealizedPnL = new Decimal(position.entryPrice)
+      .minus(currentPrice)
+      .times(position.quantity)
+      .times(position.leverage)
+      .minus(entryFee);
   }
   return unrealizedPnL.toFixed();
 };
@@ -260,9 +324,6 @@ const forceClosePosition = async (position, user) => {
     ).session(session);
 
     await session.commitTransaction();
-    console.log(
-      `Forced close position: User ${position.userId}, Symbol ${position.symbol}, Quantity ${position.quantity}, Position Type ${position.positionType}, Current Price ${currentPrice}, Fee ${fee}`,
-    );
   } catch (error) {
     await session.abortTransaction();
     logError(error, "forceClosePosition", { userId: position.userId });
@@ -279,16 +340,26 @@ export const monitorMargin = async () => {
       for (const position of positions) {
         const currentPrice = await getCurrentPrice(position.symbol);
         const totalCost = new Decimal(position.quantity).times(currentPrice);
-        const initialMargin = calculateInitialMargin(totalCost, position.leverage);
+        const initialMargin = calculateInitialMargin(
+          totalCost,
+          position.leverage,
+        );
         const maintenanceMargin = calculateMaintenanceMargin(initialMargin);
         const financingFee = totalCost.times(FINANCING_RATE).dividedBy(365);
 
         user.balance = new Decimal(user.balance).minus(financingFee).toFixed();
 
-        if (new Decimal(user.balance).lessThan(maintenanceMargin.times(LIQUIDATION_THRESHOLD))) {
+        if (
+          new Decimal(user.balance).lessThan(
+            maintenanceMargin.times(LIQUIDATION_THRESHOLD),
+          )
+        ) {
           await forceClosePosition(position, user);
         } else {
-          await FuturesAccount.updateOne({ _id: user._id }, { balance: user.balance }).lean();
+          await FuturesAccount.updateOne(
+            { _id: user._id },
+            { balance: user.balance },
+          ).lean();
         }
       }
     } catch (error) {
@@ -318,7 +389,9 @@ export const adjustLeverage = async (req, res) => {
   const allowedLeverages = Object.keys(INITIAL_MARGIN_RATIOS).map(Number);
 
   if (!allowedLeverages.includes(newLeverage)) {
-    return res.status(400).json({ message: `Invalid leverage. Allowed values are ${allowedLeverages.join(', ')}.` });
+    return res.status(400).json({
+      message: `Invalid leverage. Allowed values are ${allowedLeverages.join(", ")}.`,
+    });
   }
 
   try {
@@ -356,7 +429,10 @@ export const closePosition = async (req, res) => {
   session.startTransaction();
 
   try {
-    const position = await FuturesPosition.findOne({ _id: positionId, userId }).session(session);
+    const position = await FuturesPosition.findOne({
+      _id: positionId,
+      userId,
+    }).session(session);
     if (!position) {
       await session.abortTransaction();
       return res.status(404).json({ message: "Position not found" });
@@ -370,7 +446,9 @@ export const closePosition = async (req, res) => {
 
     const currentPrice = new Decimal(await getCurrentPrice(position.symbol));
     const totalAmount = new Decimal(position.quantity).times(currentPrice);
-    const fee = totalAmount.times(TRANSACTION_FEE_RATE).times(position.leverage);
+    const fee = totalAmount
+      .times(TRANSACTION_FEE_RATE)
+      .times(position.leverage);
 
     let totalRevenue;
     if (position.positionType === "long") {
@@ -381,9 +459,13 @@ export const closePosition = async (req, res) => {
       user.balance = new Decimal(user.balance).plus(totalRevenue).toFixed();
     }
 
-    user.usedMargin = new Decimal(user.usedMargin).minus(position.initialMargin).toFixed();
+    user.usedMargin = new Decimal(user.usedMargin)
+      .minus(position.initialMargin)
+      .toFixed();
 
-    await position.remove({ session });
+    await FuturesPosition.deleteOne({ _id: positionId, userId }).session(
+      session,
+    );
     user.positions.pull(position._id);
     await user.save({ session });
 
@@ -408,7 +490,10 @@ const calculateUserRiskRate = async (userId) => {
   for (const position of positions) {
     const currentPrice = new Decimal(await getCurrentPrice(position.symbol));
     const totalAmount = new Decimal(position.quantity).times(currentPrice);
-    const initialMargin = calculateInitialMargin(totalAmount, position.leverage);
+    const initialMargin = calculateInitialMargin(
+      totalAmount,
+      position.leverage,
+    );
     const maintenanceMargin = calculateMaintenanceMargin(initialMargin);
 
     totalInitialMargin = totalInitialMargin.plus(initialMargin);

@@ -1,18 +1,73 @@
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
+import { Typography, Box, Paper, Grid } from "@mui/material";
 
 const SpotOrderDetail = ({ order }) => {
+  const getPriceLabel = () => {
+    if (order.orderType.includes("buy")) {
+      return (
+        <Typography variant="body2">
+          <strong>進場價格:</strong> {order.entryPrice}
+        </Typography>
+      );
+    } else if (order.orderType.includes("sell")) {
+      return (
+        <Typography variant="body2">
+          <strong>出場價格:</strong> {order.exitPrice}
+        </Typography>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div>
-      <h2>Order Detail</h2>
-      <p><strong>Symbol:</strong> {order.symbol}</p>
-      <p><strong>Order Type:</strong> {order.orderType}</p>
-      <p><strong>Quantity:</strong> {order.quantity}</p>
-      <p><strong>Status:</strong> {order.status}</p>
-      {order.orderType.includes('limit') && <p><strong>Limit Price:</strong> {order.price}</p>}
-      {order.orderType.includes('market') && <p><strong>Executed at Market Price</strong></p>}
-      <p><strong>Fee:</strong> {order.fee}</p>
-      <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-    </div>
+    <Paper sx={{ marginBottom: 5, mt: 2, p: 3, borderRadius: 5 }}>
+      <Typography variant="h5" component="div" gutterBottom>
+        訂單詳情
+      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={4}>
+            <Typography variant="body2">
+              <strong>交易對:</strong> {order.symbol}
+            </Typography>
+          </Grid>
+          <Grid item xs={4}>
+            <Typography variant="body2">
+              <strong>訂單類型:</strong> {order.orderType}
+            </Typography>
+          </Grid>
+          <Grid item xs={4}>
+            <Typography variant="body2">
+              <strong>數量:</strong> {order.quantity}
+            </Typography>
+          </Grid>
+          <Grid item xs={4}>
+            <Typography variant="body2">
+              <strong>狀態:</strong> {order.status}
+            </Typography>
+          </Grid>
+          <Grid item xs={4}>
+            {order.orderType.includes("limit") && (
+              <Typography variant="body2">
+                <strong>限價:</strong> {order.price}
+              </Typography>
+            )}
+            {order.orderType.includes("market") && getPriceLabel()}
+          </Grid>
+          <Grid item xs={4}>
+            <Typography variant="body2">
+              <strong>手續費:</strong> {order.fee}
+            </Typography>
+          </Grid>
+          <Grid item xs={4}>
+            <Typography variant="body2">
+              <strong>創建時間:</strong>{" "}
+              {new Date(order.createdAt).toLocaleString()}
+            </Typography>
+          </Grid>
+        </Grid>
+      </Box>
+    </Paper>
   );
 };
 
@@ -25,6 +80,8 @@ SpotOrderDetail.propTypes = {
     price: PropTypes.number,
     fee: PropTypes.number.isRequired,
     createdAt: PropTypes.string.isRequired,
+    entryPrice: PropTypes.number,
+    exitPrice: PropTypes.number,
   }).isRequired,
 };
 

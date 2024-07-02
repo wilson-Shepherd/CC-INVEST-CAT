@@ -1,24 +1,24 @@
-import { useState } from 'react';
-import PropTypes from 'prop-types';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import './KLineForm.css';
+import { useState } from "react";
+import PropTypes from "prop-types";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "./KLineForm.css";
 
 const KLineForm = ({ onFetchData }) => {
-  const [symbol, setSymbol] = useState('BTCUSDT');
-  const [interval, setInterval] = useState('1d');
+  const [symbol, setSymbol] = useState("BTCUSDT");
+  const [interval, setInterval] = useState("1d");
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!startDate || !endDate) {
-      alert('Please enter both start and end dates.');
+      alert("Please enter both start and end dates.");
       return;
     }
     const startTime = startDate.getTime();
     const endTime = endDate.getTime();
-    const timeZone = '0';
+    const timeZone = "0";
     onFetchData({ symbol, interval, startTime, endTime, timeZone });
   };
 
@@ -26,7 +26,11 @@ const KLineForm = ({ onFetchData }) => {
     <form onSubmit={handleSubmit} className="kline-form">
       <div>
         <label>Symbol:</label>
-        <input type="text" value={symbol} onChange={(e) => setSymbol(e.target.value)} />
+        <input
+          type="text"
+          value={symbol}
+          onChange={(e) => setSymbol(e.target.value)}
+        />
       </div>
       <div>
         <label>Interval:</label>
@@ -43,7 +47,7 @@ const KLineForm = ({ onFetchData }) => {
         <label>Start Date:</label>
         <DatePicker
           selected={startDate}
-          onChange={date => setStartDate(date)}
+          onChange={(date) => setStartDate(date)}
           showTimeSelect
           dateFormat="Pp"
         />
@@ -52,7 +56,7 @@ const KLineForm = ({ onFetchData }) => {
         <label>End Date:</label>
         <DatePicker
           selected={endDate}
-          onChange={date => setEndDate(date)}
+          onChange={(date) => setEndDate(date)}
           showTimeSelect
           dateFormat="Pp"
         />

@@ -46,9 +46,16 @@ export const getAccountBalance = async () => {
     const accountInfo = await fetchData(url, "GET", {
       "X-MBX-APIKEY": config.apiKey,
     });
-    const getBalance = (asset) =>
-      parseFloat(accountInfo.balances.find((b) => b.asset === asset).free);
-    return { BTC: getBalance("BTC"), USDT: getBalance("USDT") };
+
+    const getBalance = (asset) => {
+      const balance = accountInfo.balances.find((b) => b.asset === asset);
+      return balance ? parseFloat(balance.free) : 0;
+    };
+
+    const btcBalance = getBalance("BTC");
+    const usdtBalance = getBalance("USDT");
+
+    return { BTC: btcBalance, USDT: usdtBalance };
   } catch (error) {
     console.error("Error fetching account balance:", error);
     throw error;
