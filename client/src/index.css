@@ -1,0 +1,12 @@
+html,
+body {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  overflow-y: scroll;
+  overscroll-behavior: none;
+  background-color: #ffffff;
+}

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - STATIC_FILES_PATH=/app/client/dist
+    volumes:
+      - ./server:/app/server
+      - ./client:/app/client
