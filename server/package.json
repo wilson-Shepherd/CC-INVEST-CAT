@@ -20,7 +20,6 @@
     "node": ">=14.0.0"
   },
   "dependencies": {
-    "aws-sdk": "^2.1653.0",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "binance-api-node": "^0.12.7",
@@ -32,7 +31,7 @@
     "express": "^4.19.2",
     "express-validator": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mime-types": "^2.1.35",
+    "kafka-node": "^5.0.0",
     "mongodb": "^6.7.0",
     "mongoose": "^8.4.1",
     "node-cron": "^3.0.3",

@@ -4,20 +4,10 @@ import fetch from "node-fetch";
 
 dotenv.config();
 
-const useTestnet = true;
-
 const config = {
-  apiKey:
-    process.env[
-      useTestnet ? "TESTNET_BINANCE_API_KEY" : "MAINNET_BINANCE_API_KEY"
-    ],
-  apiSecret:
-    process.env[
-      useTestnet ? "TESTNET_BINANCE_API_SECRET" : "MAINNET_BINANCE_API_SECRET"
-    ],
-  baseURL: useTestnet
-    ? "https://testnet.binance.vision/api"
-    : "https://api.binance.com",
+  apiKey: process.env.TESTNET_BINANCE_API_KEY,
+  apiSecret: process.env.TESTNET_BINANCE_API_SECRET,
+  baseURL: "https://testnet.binance.vision/api",
 };
 
 const fetchData = async (url, method = "GET", headers = {}) => {
