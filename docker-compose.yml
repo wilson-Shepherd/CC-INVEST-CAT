@@ -1,14 +1,29 @@
-version: '3.8'
-
 services:
-  server:
-    build:
-      context: .
+  zookeeper:
+    image: bitnami/zookeeper:3.9.2
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: bitnami/kafka:3.7.1
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+
+  app:
+    build: .
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - STATIC_FILES_PATH=/app/client/dist
-    volumes:
-      - ./server:/app/server
-      - ./client:/app/client
+    depends_on:
+      - kafka
+    env_file:
+      - ./server/.env

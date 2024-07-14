@@ -20,6 +20,8 @@ import {
 } from "@mui/material";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
+const API_BASE_URL = import.meta.env.API_BASE_URL;
+
 const SpotTradingForm = ({ userId, onSubmit }) => {
   const [symbol, setSymbol] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -37,7 +39,7 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
     const fetchAvailableCryptos = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:3000/api/spotTrading/availableCryptos",
+          `${API_BASE_URL}/api/spot/availableCryptos`,
         );
         setAvailableCryptos(
           response.data.filter((symbol) => symbol.endsWith("USDT")),
@@ -89,7 +91,7 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
       }
 
       const response = await axios.post(
-        `http://localhost:3000/api/spotTrading/users/${userId}/orders`,
+        `${API_BASE_URL}/api/spot/users/${userId}/orders`,
         orderData,
       );
       onSubmit(response.data);
@@ -198,6 +200,8 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
             fullWidth
             required
             margin="normal"
+            inputProps={{ maxLength: 20 }}
+            sx={{ whiteSpace: "nowrap", textOverflow: "ellipsis" }}
           />
           <TextField
             label="數量"
@@ -207,11 +211,8 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
             fullWidth
             required
             margin="normal"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">{symbol}</InputAdornment>
-              ),
-            }}
+            inputProps={{ maxLength: 10 }}
+            sx={{ whiteSpace: "nowrap", textOverflow: "ellipsis" }}
           />
           {priceType === "limit" && (
             <TextField
@@ -227,6 +228,8 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
                   <InputAdornment position="end">USDT</InputAdornment>
                 ),
               }}
+              inputProps={{ maxLength: 10 }}
+              sx={{ whiteSpace: "nowrap", textOverflow: "ellipsis" }}
             />
           )}
           <Button

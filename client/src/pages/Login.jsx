@@ -6,8 +6,6 @@ import {
   Button,
   CssBaseline,
   TextField,
-  FormControlLabel,
-  Checkbox,
   Link,
   Paper,
   Box,
@@ -147,10 +145,6 @@ const Login = () => {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-              />
-              <FormControlLabel
-                control={<Checkbox value="remember" color="primary" />}
-                label="記住我"
               />
               <Button
                 type="submit"

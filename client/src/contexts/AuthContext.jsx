@@ -4,7 +4,7 @@ import axios from "axios";
 
 const AuthContext = createContext();
 
-axios.defaults.baseURL = "http://localhost:3000";
+axios.defaults.baseURL = import.meta.env.API_BASE_URL;
 
 axios.interceptors.request.use(
   (config) => {

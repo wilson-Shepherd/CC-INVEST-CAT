@@ -97,7 +97,7 @@ export const forgotPassword = async (req, res) => {
       expiresIn: "1h",
     });
 
-    const resetUrl = `http://localhost:5173/reset-password/${token}`;
+    const resetUrl = `http://www.cc-invest-cat.com/reset-password/${token}`;
 
     const transporter = nodemailer.createTransport({
       service: "Gmail",

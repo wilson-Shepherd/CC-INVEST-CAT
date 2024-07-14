@@ -15,6 +15,7 @@ import axios from "axios";
 import background from "../assets/register_p1.png";
 
 const theme = createTheme();
+const API_BASE_URL = import.meta.env.API_BASE_URL;
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/users/forgot-password",
+        `${API_BASE_URL}/api/users/forgot-password`,
         { email },
       );
       setMessage(response.data.message);

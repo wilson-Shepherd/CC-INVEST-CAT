@@ -9,4 +9,7 @@ export default defineConfig({
       input: "index.html",
     },
   },
+  define: {
+    'import.meta.env.API_BASE_URL': JSON.stringify('https://api.cc-invest-cat.com')
+  }
 });

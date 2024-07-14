@@ -6,9 +6,12 @@ export async function sendNotification(channelId, message) {
     if (channel) {
       await channel.send(message);
     } else {
-      console.error("Channel not found");
+      console.error(`Channel not found for channelId: ${channelId}`);
     }
   } catch (error) {
-    console.error("Error sending notification:", error);
+    console.error(
+      `Error sending notification to Discord channel ${channelId}:`,
+      error,
+    );
   }
 }

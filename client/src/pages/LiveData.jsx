@@ -23,7 +23,7 @@ import { SiBinance, SiSolana, SiRipple } from "react-icons/si";
 import HotSaleIcon from "../assets/hot-sale.png";
 import CrownIcon from "../assets/crown.png";
 
-const socket = io("http://localhost:3000");
+const socket = io(import.meta.env.API_BASE_URL);
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: "bold",

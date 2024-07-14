@@ -3,7 +3,7 @@ import DiscordIcon from "../assets/discord.png";
 import FacebookIcon from "../assets/facebook.png";
 
 const Footer = () => {
-  const discordInviteLink = "https://discord.gg/hAVC5W9yGx";
+  const discordInviteLink = "https://discord.gg/DFVVpHnDxv";
   const facebookLink = "https://www.facebook.com";
 
   return (

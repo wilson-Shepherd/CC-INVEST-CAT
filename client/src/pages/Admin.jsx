@@ -26,6 +26,7 @@ import {
 } from "recharts";
 
 const COLORS = ["#8884d8", "#82ca9d"];
+const API_BASE_URL = import.meta.env.API_BASE_URL;
 
 const Admin = () => {
   const [orderFees, setOrderFees] = useState([]);
@@ -48,7 +49,7 @@ const Admin = () => {
       const token = localStorage.getItem("token");
       console.log("Fetching account balance with token:", token);
       const response = await axios.get(
-        "http://localhost:3000/api/admin/account-balance",
+        `${API_BASE_URL}/api/admin/account-balance`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -74,7 +75,7 @@ const Admin = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:3000/api/admin/order-fees",
+          `${API_BASE_URL}/api/admin/order-fees`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -111,7 +112,7 @@ const Admin = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:3000/api/admin/control-trading-bot",
+        `${API_BASE_URL}/api/admin/control-trading-bot`,
         { action },
         {
           headers: { Authorization: `Bearer ${token}` },

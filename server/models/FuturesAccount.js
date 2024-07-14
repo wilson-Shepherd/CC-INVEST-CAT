@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const FuturesAccountSchema = new Schema(
+const futuresAccountSchema = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -12,20 +12,26 @@ const FuturesAccountSchema = new Schema(
     },
     balance: {
       type: Number,
-      required: true,
-      default: 100000,
+      default: 10000,
     },
-    usedMargin: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    positions: [
+    contracts: [
       {
         type: Schema.Types.ObjectId,
-        ref: "FuturesPosition",
+        ref: "FuturesContract",
       },
     ],
+    totalMarginBalance: {
+      type: Number,
+    },
+    totalUnrealizedPnl: {
+      type: Number,
+    },
+    maintenanceMargin: {
+      type: Number,
+    },
+    marginRatio: {
+      type: Number,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -34,6 +40,6 @@ const FuturesAccountSchema = new Schema(
   { versionKey: false },
 );
 
-const FuturesAccount = mongoose.model("FuturesAccount", FuturesAccountSchema);
+const FuturesAccount = mongoose.model("FuturesAccount", futuresAccountSchema);
 
 export default FuturesAccount;

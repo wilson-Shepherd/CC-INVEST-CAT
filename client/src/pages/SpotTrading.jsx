@@ -13,7 +13,9 @@ import {
   Typography,
   Grid,
 } from "@mui/material";
-import tradingBanner from "../assets/trading_banner.png";
+
+
+const API_BASE_URL = import.meta.env.API_BASE_URL;
 
 const SpotTrading = () => {
   const { user } = useContext(AuthContext);
@@ -31,7 +33,7 @@ const SpotTrading = () => {
   const fetchAccountData = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/spotTrading/users/${user._id}/account`,
+        `${API_BASE_URL}/api/spot/users/${user._id}/account`,
       );
       setAccount(response.data);
     } catch (error) {
@@ -42,7 +44,7 @@ const SpotTrading = () => {
   const fetchOrders = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/spotTrading/users/${user._id}/orders`,
+        `${API_BASE_URL}/api/spot/users/${user._id}/orders`,
       );
       setOrders(response.data);
     } catch (error) {
@@ -82,11 +84,6 @@ const SpotTrading = () => {
       <Box
         sx={{ textAlign: "center", marginTop: "1rem", marginBottom: "3rem" }}
       >
-        <img
-          src={tradingBanner}
-          alt="Trading Banner"
-          style={{ width: "100%", maxHeight: "100%", objectFit: "cover" }}
-        />
       </Box>
       <KlineChart />
       <Grid container spacing={3}>
