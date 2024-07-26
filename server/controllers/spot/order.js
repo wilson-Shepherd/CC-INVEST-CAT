@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Decimal from "decimal.js";
-import SpotOrder from "../models/SpotOrder.js";
-import SpotAccount from "../models/SpotAccount.js";
+import SpotOrder from "../../models/Spot/Order.js";
+import SpotAccount from "../../models/Spot/Account.js";
 import {
   logError,
   getCurrentPrice,
@@ -9,7 +9,7 @@ import {
   PRICE_TOLERANCE,
   getAvailableCryptosUtil,
   validateAccount,
-} from "../utils/tradeUtils.js";
+} from "../../utils/tradeUtils.js";
 
 export const getSpotAccount = async (req, res) => {
   const { userId } = req.params;
@@ -76,10 +76,7 @@ export const createSpotOrder = async (req, res) => {
         .dividedBy(limitPrice)
         .greaterThan(PRICE_TOLERANCE)
     ) {
-      await session.abortTransaction();
-      return res
-        .status(400)
-        .json({ message: "Price is out of allowable range, please try again" });
+      throw new Error("Price is out of allowable range, please try again");
     }
 
     const orderData = {
@@ -104,9 +101,13 @@ export const createSpotOrder = async (req, res) => {
     await session.commitTransaction();
     res.status(201).json(newOrder[0]);
   } catch (error) {
-    await session.abortTransaction();
+    try {
+      await session.abortTransaction();
+    } catch (abortError) {
+      logError(abortError, "createSpotOrder - abortTransaction");
+    }
     logError(error, "createSpotOrder");
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message || "Internal server error" });
   } finally {
     session.endSession();
   }

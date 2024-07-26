@@ -103,9 +103,18 @@ const SpotTradingForm = ({ userId, onSubmit }) => {
     } catch (error) {
       console.error(
         "Error placing order:",
-        error.response ? error.response.data : error.message,
+        error.response ? error.response.data : error.message
       );
-      handleSnackbar("訂單提交失敗", "error");
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message ===
+          "Price is out of allowable range, please try again"
+      ) {
+        handleSnackbar("價格不能超過市價50%", "error");
+      } else {
+        handleSnackbar("訂單提交失敗", "error");
+      }
     }
   };
 

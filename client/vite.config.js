@@ -10,6 +10,13 @@ export default defineConfig({
     },
   },
   define: {
-    'import.meta.env.API_BASE_URL': JSON.stringify('https://api.cc-invest-cat.com')
-  }
+    "import.meta.env.API_BASE_URL": JSON.stringify(
+      "https://api.cc-invest-cat.com",
+    ),
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.js',
+  },
 });

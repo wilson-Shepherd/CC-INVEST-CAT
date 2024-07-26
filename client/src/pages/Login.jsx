@@ -57,9 +57,18 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email || !password) {
+      setSnackbar({
+        open: true,
+        message: "登入失敗，請檢查您的電子郵件和密碼。",
+        severity: "error",
+      });
+      return;
+    }
+
     try {
       await login(email, password);
-      navigate("/mock-trading");
+      navigate("/spot-trading");
       setSnackbar({ open: true, message: "登入成功", severity: "success" });
     } catch (error) {
       let errorMessage = "登入失敗，請檢查您的電子郵件和密碼。";
@@ -68,6 +77,16 @@ const Login = () => {
         errorMessage = errorMessages[serverMessage] || errorMessage;
       }
       setSnackbar({ open: true, message: errorMessage, severity: "error" });
+    }
+  };
+
+  const handleMockLogin = async () => {
+    try {
+      await login("admin@gmail.com", "adminadmin");
+      navigate("/spot-trading");
+      setSnackbar({ open: true, message: "登入成功", severity: "success" });
+    } catch (error) {
+      setSnackbar({ open: true, message: "Mock登入失敗", severity: "error" });
     }
   };
 
@@ -133,6 +152,7 @@ const Login = () => {
                 autoFocus
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                inputProps={{ 'data-testid': 'email-input' }}
               />
               <TextField
                 margin="normal"
@@ -145,6 +165,7 @@ const Login = () => {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                inputProps={{ 'data-testid': 'password-input' }}
               />
               <Button
                 type="submit"
@@ -159,6 +180,19 @@ const Login = () => {
                 }}
               >
                 登入
+              </Button>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleMockLogin}
+                sx={{
+                  mb: 2,
+                  color: "#000",
+                  borderColor: "#000",
+                  "&:hover": { backgroundColor: "#f0f0f0" },
+                }}
+              >
+                登入 (面試官用)
               </Button>
               <Grid container>
                 <Grid item xs>

@@ -1,3 +1,4 @@
+/*
 import BinanceDataScraper from "../services/binance/dataScraper.js";
 import { gridTrading } from "../strategies/gridTrading.js";
 
@@ -38,3 +39,4 @@ export const runBacktest = async (
     throw error;
   }
 };
+*/

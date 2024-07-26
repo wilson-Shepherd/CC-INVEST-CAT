@@ -1,3 +1,4 @@
+/*
 import {
   createGrid,
   executeTrade,
@@ -136,3 +137,4 @@ export const stopTrading = () => {
     clearInterval(intervalId);
   }
 };
+*/

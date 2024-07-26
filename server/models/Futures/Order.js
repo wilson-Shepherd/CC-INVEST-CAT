@@ -12,11 +12,13 @@ const futuresOrderSchema = new Schema(
     symbol: {
       type: String,
       required: true,
+      trim: true,
     },
     orderType: {
       type: String,
       enum: ["market"],
       required: true,
+      default: "market",
     },
     side: {
       type: String,
@@ -26,35 +28,43 @@ const futuresOrderSchema = new Schema(
     leverage: {
       type: Number,
       required: true,
+      min: [0, "Leverage must be positive"],
     },
     quantity: {
       type: Number,
       required: true,
+      min: [0, "Quantity must be positive"],
     },
     price: {
       type: Number,
+      default: 0,
+      min: [0, "Price must be positive"],
     },
     status: {
       type: String,
-      enum: ["open", "closed", "canceled"],
+      enum: ["open", "executed", "closed", "canceled"],
       default: "open",
     },
     stopLoss: {
       type: Number,
+      default: 0,
+      min: [0, "Stop loss must be positive"],
     },
     takeProfit: {
       type: Number,
+      default: 0,
+      min: [0, "Take profit must be positive"],
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
+    fee: {
+      type: Number,
+      default: 0,
+      min: [0, "Fee must be positive"],
     },
   },
-  { versionKey: false, timestamps: true },
+  {
+    versionKey: false,
+    timestamps: { createdAt: "createdAt", updatedAt: "updatedAt" },
+  },
 );
 
 const FuturesOrder = mongoose.model("FuturesOrder", futuresOrderSchema);

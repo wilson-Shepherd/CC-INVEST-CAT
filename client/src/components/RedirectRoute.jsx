@@ -7,7 +7,7 @@ const RedirectRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
 
   if (user) {
-    return <Navigate to="/mock-trading" />;
+    return <Navigate to="/spot-trading" />;
   }
 
   return children;

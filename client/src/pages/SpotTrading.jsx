@@ -1,10 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../contexts/AuthContext";
-import SpotAccountInfo from "../components/spot/SpotAccountInfo";
-import SpotTradingForm from "../components/spot/SpotTradingForm";
-import SpotOrdersList from "../components/spot/SpotOrdersList";
-import SpotOrderDetail from "../components/spot/SpotOrderDetail";
+import SpotAccountInfo from "../components/Spot/AccountInfo";
+import SpotTradingForm from "../components/Spot/TradingForm";
+import SpotOrdersList from "../components/Spot/OrdersList";
+import SpotOrderDetail from "../components/Spot/OrderDetail";
 import KlineChart from "../components/KLineChart";
 import {
   Box,
@@ -13,7 +13,6 @@ import {
   Typography,
   Grid,
 } from "@mui/material";
-
 
 const API_BASE_URL = import.meta.env.API_BASE_URL;
 
@@ -83,8 +82,7 @@ const SpotTrading = () => {
     <Container maxWidth="lg">
       <Box
         sx={{ textAlign: "center", marginTop: "1rem", marginBottom: "3rem" }}
-      >
-      </Box>
+      ></Box>
       <KlineChart />
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>

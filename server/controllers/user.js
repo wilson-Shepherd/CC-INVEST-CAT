@@ -1,8 +1,8 @@
 import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import SpotAccount from "../models/SpotAccount.js";
-import FuturesAccount from "../models/FuturesAccount.js";
+import SpotAccount from "../models/Spot/Account.js";
+import FuturesAccount from "../models/Futures/Account.js";
 import { signJWT } from "../utils/jwt.js";
 import bcrypt from "bcryptjs";
 

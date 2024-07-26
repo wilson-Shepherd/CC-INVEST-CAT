@@ -47,23 +47,24 @@ const SpotOrderDetail = ({ order }) => {
             </Typography>
           </Grid>
           <Grid item xs={4}>
-            {order.orderType.includes("limit") && (
-              <Typography variant="body2">
-                <strong>限價:</strong> {order.price}
-              </Typography>
-            )}
-            {order.orderType.includes("market") && getPriceLabel()}
-          </Grid>
-          <Grid item xs={4}>
             <Typography variant="body2">
               <strong>手續費:</strong> {order.fee}
             </Typography>
           </Grid>
           <Grid item xs={4}>
             <Typography variant="body2">
-              <strong>創建時間:</strong>{" "}
-              {new Date(order.createdAt).toLocaleString()}
+              <strong>創建時間:</strong> {new Date(order.createdAt).toLocaleString()}
             </Typography>
+          </Grid>
+          <Grid item xs={4}>
+            {getPriceLabel()}
+          </Grid>
+          <Grid item xs={4}>
+            {order.orderType.includes("limit") && (
+              <Typography variant="body2">
+                <strong>限價價格:</strong> {order.price}
+              </Typography>
+            )}
           </Grid>
         </Grid>
       </Box>
