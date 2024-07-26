@@ -1,3 +1,4 @@
+/*
 import axios from "axios";
 import binanceClient from "./client.js";
 
@@ -74,3 +75,4 @@ class BinanceDataScraper {
 }
 
 export default BinanceDataScraper;
+*/

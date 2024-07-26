@@ -5,7 +5,7 @@ import {
   getSpotOrders,
   getSpotOrder,
   getAvailableCryptos,
-} from "../controllers/spotTrading.js";
+} from "../controllers/spot/order.js";
 import authenticate from "../middlewares/authenticate.js";
 
 const router = express.Router();

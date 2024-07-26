@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const TRANSACTION_FEE_RATE = 0.001;
+export const TRANSACTION_FEE_RATE = 0.00075;
 export const PRICE_TOLERANCE = 0.5;
 export const ORDER_EXPIRY_DAYS = 30;
 

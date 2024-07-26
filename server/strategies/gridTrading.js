@@ -1,3 +1,4 @@
+/*
 export function gridTrading(
   historicalData,
   lowerPrice,
@@ -88,3 +89,4 @@ export function createGrid(lowerPrice, upperPrice, gridSize) {
   const step = (upperPrice - lowerPrice) / gridSize;
   return Array.from({ length: gridSize + 1 }, (_, i) => lowerPrice + i * step);
 }
+*/

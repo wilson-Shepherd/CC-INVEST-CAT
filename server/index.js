@@ -1,32 +1,42 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import connectDB from "./config/database.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import connectDB from "./models/database.js";
 import tickerRoutes, { initWebSocketRoutes } from "./routes/ticker.js";
 import userRoutes from "./routes/user.js";
-import spotTradingRoutes from "./routes/spotTrading.js";
-import futuresTradingRoutes from "./routes/futuresTrading.js";
+import spotTradingRoutes from "./routes/spot.js";
+import futuresTradingRoutes from "./routes/futures.js";
 import adminRoutes from "./routes/admin.js";
 import { errorHandler } from "./utils/errorHandler.js";
-import dcClient from "./services/discordBot/app.js";
 import "./utils/orderScheduler.js";
-import { initKafkaProducer, closeKafkaProducer } from './services/kafkaService.js';
-import { initPriceNotificationScheduler } from './services/discordBot/kafkaProducer.js';
+import {
+  initKafkaProducer,
+  closeKafkaProducer,
+} from "./services/kafka/service.js";
+import { initPriceNotificationScheduler } from "./services/discordBot/kafkaProducer.js";
+import { streamTickerData } from "./controllers/ticker.js";
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ["https://app.cc-invest-cat.com"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  },
+});
+
 const PORT = process.env.PORT || 3000;
-const server = initWebSocketRoutes(app);
 
 connectDB();
 
 async function initialize() {
   try {
-    await initKafkaProducer();
-    initPriceNotificationScheduler();
-
     app.use(
       cors({
-        origin: "https://app.cc-invest-cat.com",
+        origin: ["https://app.cc-invest-cat.com"],
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
       }),
@@ -44,31 +54,40 @@ async function initialize() {
     app.use("/api/futures", futuresTradingRoutes);
     app.use("/api/admin", adminRoutes);
 
-    if (dcClient) {
-      console.log("Discord client initialized");
-    }
+    initWebSocketRoutes();
+
+    io.on("connection", (socket) => {
+      streamTickerData(io);
+    });
 
     server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Failed to initialize application:', error);
-    process.exit(1);
+    console.error("Failed to initialize application:", error);
+    throw new Error("Initialization error");
+  }
+
+  try {
+    await initKafkaProducer();
+    initPriceNotificationScheduler();
+  } catch (error) {
+    console.error("Failed to initialize Kafka:", error);
   }
 }
 
 initialize();
 
-process.on('SIGTERM', async () => {
-  console.log('Shutting down...');
+process.on("SIGTERM", async () => {
   try {
     await closeKafkaProducer();
     server.close(() => {
-      console.log('Server and Kafka producer closed.');
       process.exit(0);
     });
   } catch (error) {
-    console.error('Error during shutdown:', error);
+    console.error("Error during shutdown:", error);
     process.exit(1);
   }
 });
+
+export default server;

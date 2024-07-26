@@ -1,5 +1,5 @@
-import FuturesContract from "../models/FuturesContract.js";
-import { logError } from "../utils/tradeUtils.js";
+import FuturesContract from "../../models/Futures/Contract.js";
+import { logError } from "../../utils/tradeUtils.js";
 
 export const getFuturesContracts = async (req, res) => {
   const { userId } = req.params;

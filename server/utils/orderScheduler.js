@@ -6,11 +6,11 @@ import {
   logError,
   validateAccount,
 } from "../utils/tradeUtils.js";
-import SpotOrder from "../models/SpotOrder.js";
-import SpotAccount from "../models/SpotAccount.js";
-import { executeOrder as executeSpotOrder } from "../controllers/spotTrading.js";
-import FuturesContract from "../models/FuturesContract.js";
-import FuturesAccount from "../models/SpotAccount.js";
+import SpotOrder from "../models/Spot/Order.js";
+import SpotAccount from "../models/Spot/Account.js";
+import { executeOrder as executeSpotOrder } from "../controllers/spot/order.js";
+import FuturesContract from "../models/Futures/Contract.js";
+import FuturesAccount from "../models/Spot/Account.js";
 
 export const executePendingOrders = async (
   OrderModel,
@@ -111,33 +111,60 @@ export const executeLiquidation = async () => {
       const currentPrice = new Decimal(await getCurrentPrice(contract.symbol));
       const entryPrice = new Decimal(contract.entryPrice);
       const positionSize = new Decimal(contract.positionSize);
-      const pnl = currentPrice
+      const leverage = new Decimal(contract.leverage);
+
+      const unrealizedPnl = currentPrice
         .minus(entryPrice)
         .times(positionSize)
         .times(contract.type === "long" ? 1 : -1);
-      const totalBalance = new Decimal(account.balance).plus(pnl);
 
-      if (totalBalance.lessThan(contract.margin)) {
+      const initialMargin = positionSize.times(entryPrice).dividedBy(leverage);
+      const currentEquity = new Decimal(contract.margin).plus(unrealizedPnl);
+      const currentMarginRatio = currentEquity
+        .dividedBy(initialMargin)
+        .times(100);
+
+      const liquidationThreshold = new Decimal(50);
+
+      if (currentMarginRatio.lessThan(liquidationThreshold)) {
+        const closingPrice = currentPrice.toNumber();
+        const closingAmount = positionSize.toNumber();
+
+        const pnl = unrealizedPnl.toNumber();
+
         account.balance = new Decimal(account.balance)
           .plus(pnl)
-          .minus(new Decimal(contract.margin))
+          .plus(contract.margin)
           .toNumber();
+
         account.totalMarginBalance = new Decimal(account.totalMarginBalance)
-          .minus(new Decimal(contract.margin))
+          .minus(contract.margin)
           .toNumber();
+
         account.contracts.pull(contract._id);
 
+        const closeOrder = new FuturesOrder({
+          userId: contract.userId,
+          symbol: contract.symbol,
+          orderType: "market",
+          side: contract.type === "long" ? "sell" : "buy",
+          quantity: closingAmount,
+          price: closingPrice,
+          status: "executed",
+          executedAt: new Date(),
+        });
+        await closeOrder.save({ session });
+
         await contract.remove({ session });
+
         validateAccount(account);
         await account.save({ session });
       }
     }
 
     await session.commitTransaction();
-    session.endSession();
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
     logError(error, "executeLiquidation");
   } finally {
     session.endSession();
