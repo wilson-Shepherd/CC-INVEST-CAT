@@ -11,7 +11,8 @@ export default defineConfig({
   },
   define: {
     "import.meta.env.API_BASE_URL": JSON.stringify(
-      "https://api.cc-invest-cat.com",
+      // "https://api.cc-invest-cat.com",
+      "http://localhost:3000",
     ),
   },
   test: {
