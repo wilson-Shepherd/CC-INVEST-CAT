@@ -27,7 +27,7 @@ CC-INVEST-CAT 是一個加密貨幣市場的模擬交易平台。這個應用程
 
 ## 系統架構
 
-![系統架構圖](https://cc-invest-cat-s3.s3.ap-northeast-1.amazonaws.com/Screenshot+2024-07-26+at+11.48.17.png)
+![系統架構圖](https://cc-invest-cat-s3.s3.ap-northeast-1.amazonaws.com/Screenshot+2024-08-05+at+16.24.55.png)
 
 系統架構包括以下主要組件：
 
